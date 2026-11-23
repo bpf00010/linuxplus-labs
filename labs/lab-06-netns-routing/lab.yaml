@@ -1,0 +1,16 @@
+id: "lab-06"
+slug: "lab-06-netns-routing"
+title: "Isolate and Troubleshoot Container Network Namespace Routing"
+distro_name: "lplab-06"
+base_image: "ubuntu-24.04"
+student_user: "sysadmin"
+difficulty: "advanced"
+estimated_minutes: 30
+xk0_006_domains:
+  - "troubleshooting"
+  - "system_management"
+  - "security"
+objectives:
+  - "Configure and bring up virtual ethernet (veth) link pairs across network namespaces"
+  - "Establish inter-namespace routing with default gateway configuration"
+  - "Diagnose and repair packet filtering drops scoped inside a network namespace"

@@ -1,0 +1,11 @@
+# lplab Configuration Example
+# Place at ./config.yaml or in %LOCALAPPDATA%\linuxplus-labs\config.yaml (Windows)
+# or ~/.config/lplab/config.yaml (Linux)
+
+ai:
+  base_url: "http://localhost:11434/v1"
+  api_key: "ollama"
+  model: "llama3"
+
+# Optional custom terminal command. E.g.
+# custom_terminal_cmd: "wt.exe -w 0 new-tab --title \"{title}\" -- wsl.exe -d {distro} -u {user}"

@@ -1,0 +1,15 @@
+id: "lab-01"
+slug: "lab-01-systemd-storage"
+title: "Troubleshoot Storage Mount and Service Startup Failure"
+distro_name: "lplab-lab-01-systemd-storage"
+base_image: "rockylinux-9"
+student_user: "sysadmin"
+difficulty: "intermediate"
+estimated_minutes: 25
+xk0_006_domains:
+  - "system_management"
+  - "troubleshooting"
+objectives:
+  - "Diagnose and repair failed filesystem mount in /etc/fstab"
+  - "Unmask and repair application systemd unit exec configuration"
+  - "Configure logrotate to prevent disk exhaustion from unmanaged application logs"

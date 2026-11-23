@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lplab"
+version = "0.1.0"
+description = "Linux+ WSL Lab Engine for CompTIA Linux+ (XK0-006) Hands-On Practice"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Linux+ Lab Team" }
+]
+dependencies = [
+    "textual>=0.70.0",
+    "typer>=0.12.0",
+    "rich>=13.0.0",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "httpx>=0.25.0",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.29.0",
+    "pywebview>=5.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+]
+build = [
+    "pyinstaller>=6.0",
+    "pillow>=10.0",
+]
+
+[project.scripts]
+lplab = "lplab.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+lplab = ["static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
