@@ -1,0 +1,16 @@
+id: "lab-04"
+slug: "lab-04-systemd-timers-watchdog"
+title: "Automate Service Recovery with Systemd Timers and Logging"
+distro_name: "lplab-04"
+base_image: "ubuntu-24.04"
+student_user: "sysadmin"
+difficulty: "intermediate"
+estimated_minutes: 25
+xk0_006_domains:
+  - "automation_scripting"
+  - "system_management"
+objectives:
+  - "Decommission legacy unmanaged cron jobs and migrate to native systemd timers"
+  - "Write an idempotent Bash watchdog script with journald logging"
+  - "Configure and enable a systemd oneshot service and companion timer"
+  - "Ensure automatic restart and recovery of metrics-collector.service"

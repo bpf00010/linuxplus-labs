@@ -1,0 +1,16 @@
+id: "lab-09"
+slug: "lab-09-systemd-mount-resize"
+title: "Manage Systemd Mount Units and Online Filesystem Expansion"
+distro_name: "lplab-09"
+base_image: "rockylinux-9"
+student_user: "sysadmin"
+difficulty: "advanced"
+estimated_minutes: 30
+xk0_006_domains:
+  - "system_management"
+  - "troubleshooting"
+objectives:
+  - "Configure native systemd .mount unit definitions with secure mount options"
+  - "Establish unit dependencies (Requires= and After=) with companion services"
+  - "Expand backing loop images and perform online ext4 filesystem resize (resize2fs)"
+  - "Verify filesystem size and security mount flags (nodev, nosuid, noexec)"

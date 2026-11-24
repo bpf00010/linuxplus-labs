@@ -9,14 +9,14 @@ from lplab.tui import GenerateModal, LabEngineApp
 
 
 @pytest.mark.asyncio
-async def test_tui_loads_all_six_labs_and_updates_views():
-    """Verify all 6 labs load in DataTable and selecting updates banner and brief."""
+async def test_tui_loads_all_nine_labs_and_updates_views():
+    """Verify all 9 labs load in DataTable and selecting updates banner and brief."""
     config = load_config()
     app = LabEngineApp(config=config)
 
     async with app.run_test() as pilot:
         table = app.query_one("#labs-table", DataTable)
-        assert table.row_count == 6
+        assert table.row_count == 9
 
         banner = app.query_one("#lab-header-banner", Static)
         work_order = app.query_one("#work-order-markdown", Markdown)
@@ -31,7 +31,7 @@ async def test_tui_loads_all_six_labs_and_updates_views():
         assert "lab-02" in banner_text
 
         # Verify Work Order content updated for lab-02
-        assert "TICKET-9044" in work_order._markdown or "api.lab.internal" in work_order._markdown
+        assert "api.lab.internal" in work_order._markdown
 
         # 2. Select lab-06
         app.select_lab_by_id("lab-06")
@@ -41,9 +41,17 @@ async def test_tui_loads_all_six_labs_and_updates_views():
         assert app.selected_manifest.id == "lab-06"
         banner_text_06 = str(banner.render())
         assert "lab-06" in banner_text_06
+        assert "18443" in work_order._markdown or "nginx" in work_order._markdown
 
-        # Verify Work Order content updated for lab-06
-        assert "NET-OPS-604" in work_order._markdown or "veth-app" in work_order._markdown
+        # 3. Select lab-09
+        app.select_lab_by_id("lab-09")
+        await pilot.pause()
+
+        assert app.selected_manifest is not None
+        assert app.selected_manifest.id == "lab-09"
+        banner_text_09 = str(banner.render())
+        assert "lab-09" in banner_text_09
+        assert "archive" in work_order._markdown
 
 
 @pytest.mark.asyncio

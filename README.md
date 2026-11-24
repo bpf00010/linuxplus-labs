@@ -40,9 +40,15 @@ No Python installation required.
 | **lab-01** | Rocky Linux 9 | System Management, Troubleshooting | Corrupted `/etc/fstab` loop mount, masked service, logrotate limits |
 | **lab-02** | Ubuntu 24.04 | Networking, Firewall, Services | Broken Nginx config, incorrect `/etc/hosts`, scoped nftables drop rule |
 | **lab-03** | Rocky Linux 9 | Security, Access Controls | Shared directory permissions (`setgid`, POSIX ACLs), least-privilege sudo |
-| **lab-04** | Ubuntu 24.04 | Automation, Scripting, Systemd | Replacing unmanaged watchdog cron with systemd service & timer |
-| **lab-05** | Rocky Linux 9 | Security, Identity, PAM | Hardening OpenSSH daemon, restricting permissions, password aging policy |
-| **lab-06** | Ubuntu 24.04 | Networking, Troubleshooting | Multi-namespace veth routing, default gateway setup, namespace nftables |
+| **lab-04** | Ubuntu 24.04 | Automation, Scripting, Systemd | Migrate broken legacy cron to `systemd` oneshot service & active timer |
+| **lab-05** | Ubuntu 24.04 | Troubleshooting, Systemd, Security | Multi-namespace `veth` routing, default gateway, and scoped `nftables` |
+| **lab-06** | Ubuntu 24.04 | Services, Security, Troubleshooting | Identify port conflict, harden TLS keys (`0600`), and fix Nginx upstream |
+| **lab-07** | Ubuntu 24.04 | Security, Services and Users | Harden OpenSSH daemon, `AllowGroups sshusers`, `.ssh` permissions, `chage` |
+| **lab-08** | Ubuntu 24.04 | Troubleshooting, System Management | Fix cgroup `MemoryMax` & `LimitNOFILE` drop-ins, mask runaway logger, `sysctl` |
+| **lab-09** | Rocky Linux 9 | System Management, Troubleshooting | Expand loop disk image, `resize2fs`, and harden systemd `.mount` unit |
+
+> [!TIP]
+> **Upgrading Base Images:** If you previously generated base `.tar` images, run `lplab build-image all --force` to bake in the latest `systemd`, `dbus-user-session`, and `policy-rc.d` fixes.
 
 ---
 

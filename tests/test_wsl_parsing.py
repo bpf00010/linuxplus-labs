@@ -143,3 +143,92 @@ def test_distro_cache_and_invalidation():
         res3 = list_distros()
         assert res3 == res1
         assert mock_run.call_count == 2
+
+
+def test_wait_for_systemd_success():
+    """Verify wait_for_systemd succeeds when PID 1 is systemd and status is running."""
+    from lplab.wsl_manager import wait_for_systemd
+
+    with patch("lplab.wsl_manager.execute_cmd") as mock_exec:
+        mock_exec.side_effect = [
+            (0, "systemd\n", ""),        # ps -p 1 -o comm=
+            (0, "running\n", ""),        # systemctl is-system-running
+        ]
+        result = wait_for_systemd("lplab-test", timeout_s=5)
+        assert result is True
+        assert mock_exec.call_count == 2
+
+
+def test_wait_for_systemd_retry_when_init():
+    """Verify wait_for_systemd retries termination when PID 1 is initially init."""
+    from lplab.wsl_manager import wait_for_systemd
+
+    with patch("lplab.wsl_manager.execute_cmd") as mock_exec, \
+         patch("lplab.wsl_manager.terminate_distro") as mock_term, \
+         patch("time.sleep"):
+        mock_exec.side_effect = [
+            (0, "init\n", ""),           # initial check -> init
+            (0, "systemd\n", ""),        # second check after cycle -> systemd
+            (0, "degraded\n", ""),       # systemctl is-system-running -> degraded is acceptable
+        ]
+        result = wait_for_systemd("lplab-test", timeout_s=5)
+        assert result is True
+        assert mock_term.called
+        assert mock_term.call_args[0][0] == "lplab-test"
+
+
+def test_wait_for_systemd_raises_if_not_systemd():
+    """Verify wait_for_systemd raises RuntimeError if PID 1 remains init."""
+    from lplab.wsl_manager import wait_for_systemd
+
+    with patch("lplab.wsl_manager.execute_cmd") as mock_exec, \
+         patch("lplab.wsl_manager.terminate_distro"), \
+         patch("time.sleep"):
+        mock_exec.side_effect = [
+            (0, "init\n", ""),
+            (0, "init\n", ""),
+        ]
+        with pytest.raises(RuntimeError) as exc:
+            wait_for_systemd("lplab-test", timeout_s=5)
+        assert "failed to boot systemd as PID 1" in str(exc.value)
+
+
+def test_wait_for_systemd_raises_on_timeout():
+    """Verify wait_for_systemd raises RuntimeError when initialization times out."""
+    from lplab.wsl_manager import wait_for_systemd
+
+    def mock_cmd(distro, cmd, user="root", timeout=10):
+        if "ps -p 1" in cmd:
+            return (0, "systemd\n", "")
+        return (1, "offline\n", "")
+
+    current_time = [100.0]
+
+    def mock_now():
+        return current_time[0]
+
+    def mock_sleep(s):
+        current_time[0] += s
+
+    with patch("lplab.wsl_manager.execute_cmd", side_effect=mock_cmd), \
+         patch("time.time", side_effect=mock_now), \
+         patch("time.sleep", side_effect=mock_sleep):
+        with pytest.raises(RuntimeError) as exc:
+            wait_for_systemd("lplab-test", timeout_s=5)
+        assert "failed to initialize" in str(exc.value)
+
+
+def test_configure_wsl_conf_writes_hardened_settings():
+    """Verify configure_wsl_conf sets systemd=true, appendWindowsPath=false, and student user."""
+    from lplab.wsl_manager import configure_wsl_conf
+
+    with patch("lplab.wsl_manager.execute_cmd") as mock_exec:
+        mock_exec.return_value = (0, "", "")
+        configure_wsl_conf("lplab-test", "studentuser")
+
+        assert mock_exec.called
+        call_cmd = mock_exec.call_args[0][1]
+        assert "systemd=true" in call_cmd
+        assert "appendWindowsPath=false" in call_cmd
+        assert "default=studentuser" in call_cmd
+

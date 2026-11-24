@@ -1,0 +1,16 @@
+id: "lab-08"
+slug: "lab-08-systemd-cgroups-sysctl"
+title: "Diagnose Resource Constraints with Systemd Cgroups and Sysctl"
+distro_name: "lplab-08"
+base_image: "ubuntu-24.04"
+student_user: "sysadmin"
+difficulty: "advanced"
+estimated_minutes: 30
+xk0_006_domains:
+  - "troubleshooting"
+  - "system_management"
+objectives:
+  - "Diagnose service failures caused by restrictive systemd cgroup resource limits"
+  - "Adjust MemoryMax and LimitNOFILE overrides to stabilize application services"
+  - "Stop, disable, and mask runaway background services"
+  - "Tune and persist kernel parameters using sysctl.d configuration files"

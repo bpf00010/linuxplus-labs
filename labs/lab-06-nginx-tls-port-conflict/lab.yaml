@@ -1,0 +1,17 @@
+id: "lab-06"
+slug: "lab-06-nginx-tls-port-conflict"
+title: "Resolve Reverse Proxy Port Conflicts and Harden TLS Configuration"
+distro_name: "lplab-06"
+base_image: "ubuntu-24.04"
+student_user: "sysadmin"
+difficulty: "intermediate"
+estimated_minutes: 25
+xk0_006_domains:
+  - "services_and_users"
+  - "security"
+  - "troubleshooting"
+objectives:
+  - "Diagnose socket port conflicts and disable conflicting systemd services"
+  - "Harden TLS private key permissions and ownership (root:root 0600)"
+  - "Fix Nginx configuration directives and reverse proxy upstream ports"
+  - "Restore secure HTTPS reverse proxy functionality on 127.0.0.1:18443"

@@ -61,16 +61,19 @@ nft add rule inet lplab02 input tcp dport 18080 drop
 
 
 def test_seed_labs_pass_linter():
-    """Verify that all six shipped seed labs pass the safety linter with zero errors."""
+    """Verify that all nine shipped seed labs pass the safety linter with zero errors."""
     labs_root = Path(__file__).resolve().parent.parent / "labs"
 
     seed_labs = [
         "lab-01-systemd-storage",
         "lab-02-networking-firewall",
         "lab-03-security-containers",
-        "lab-04-automation-timers",
-        "lab-05-ssh-pam-hardening",
-        "lab-06-netns-routing",
+        "lab-04-systemd-timers-watchdog",
+        "lab-05-netns-veth-routing",
+        "lab-06-nginx-tls-port-conflict",
+        "lab-07-ssh-pam-hardening",
+        "lab-08-systemd-cgroups-sysctl",
+        "lab-09-systemd-mount-resize",
     ]
 
     for lab_slug in seed_labs:
@@ -88,3 +91,10 @@ def test_seed_labs_pass_linter():
 
         json_contract_errors = SafetyLinter.lint_verify_script(verify_sh)
         assert not json_contract_errors, f"{lab_slug} verify.sh JSON errors: {json_contract_errors}"
+
+        # Verify bash -n syntax checks pass for both scripts
+        syntax_err_setup = SafetyLinter.check_bash_syntax(setup_sh)
+        assert syntax_err_setup is None, f"{lab_slug}/setup.sh syntax error: {syntax_err_setup}"
+
+        syntax_err_verify = SafetyLinter.check_bash_syntax(verify_sh)
+        assert syntax_err_verify is None, f"{lab_slug}/verify.sh syntax error: {syntax_err_verify}"

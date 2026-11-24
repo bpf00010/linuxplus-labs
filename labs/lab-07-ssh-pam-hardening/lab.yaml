@@ -1,0 +1,16 @@
+id: "lab-07"
+slug: "lab-07-ssh-pam-hardening"
+title: "Harden OpenSSH Daemon and User Password Aging Compliance"
+distro_name: "lplab-07"
+base_image: "ubuntu-24.04"
+student_user: "sysadmin"
+difficulty: "intermediate"
+estimated_minutes: 25
+xk0_006_domains:
+  - "security"
+  - "services_and_users"
+objectives:
+  - "Harden OpenSSH daemon configuration against root logins and password authentication"
+  - "Restrict remote SSH access based on group membership (AllowGroups)"
+  - "Enforce strict POSIX permissions and ownership on SSH key stores (700/600)"
+  - "Configure and verify user password aging policies using chage"

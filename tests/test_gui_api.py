@@ -39,17 +39,17 @@ def test_get_root_serves_html_dashboard_without_cdns(client):
 
 
 def test_get_labs_returns_seed_labs(client):
-    """Verify GET /api/labs returns all 6 seed labs with expected schema and runtime statuses."""
+    """Verify GET /api/labs returns all 9 seed labs with expected schema and runtime statuses."""
     resp = client.get("/api/labs")
     assert resp.status_code == 200
     labs = resp.json()
     assert isinstance(labs, list)
-    assert len(labs) >= 6
+    assert len(labs) == 9
 
     lab_ids = [l["id"] for l in labs]
-    assert "lab-01" in lab_ids
-    assert "lab-02" in lab_ids
-    assert "lab-03" in lab_ids
+    for i in range(1, 10):
+        expected_id = f"lab-0{i}"
+        assert expected_id in lab_ids
 
     # Inspect lab-01 schema
     lab01 = next(l for l in labs if l["id"] == "lab-01")

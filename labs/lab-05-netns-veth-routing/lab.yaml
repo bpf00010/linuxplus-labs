@@ -1,11 +1,11 @@
-id: "lab-06"
-slug: "lab-06-netns-routing"
+id: "lab-05"
+slug: "lab-05-netns-veth-routing"
 title: "Isolate and Troubleshoot Container Network Namespace Routing"
-distro_name: "lplab-06"
+distro_name: "lplab-05"
 base_image: "ubuntu-24.04"
 student_user: "sysadmin"
-difficulty: "advanced"
-estimated_minutes: 30
+difficulty: "intermediate"
+estimated_minutes: 25
 xk0_006_domains:
   - "troubleshooting"
   - "system_management"

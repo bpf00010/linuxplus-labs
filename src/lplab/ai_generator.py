@@ -57,20 +57,31 @@ class SafetyLinter:
     @classmethod
     def check_bash_syntax(cls, script_content: str) -> Optional[str]:
         """Validate bash script syntax using bash -n natively or via WSL bridge."""
-        # 1. Native bash check
-        if shutil.which("bash"):
-            try:
-                res = subprocess.run(
-                    ["bash", "-n"],
-                    input=script_content.encode("utf-8"),
-                    capture_output=True,
-                    timeout=5,
-                )
-                if res.returncode != 0:
-                    return res.stderr.decode("utf-8", errors="replace")
-                return None
-            except Exception:
-                pass
+        # 1. Direct Git for Windows bash or PATH bash (ultra-fast, ~5ms)
+        candidates = []
+        if sys.platform == "win32":
+            candidates.extend([
+                r"C:\Program Files\Git\bin\bash.exe",
+                r"C:\Program Files\Git\usr\bin\bash.exe",
+            ])
+        shutil_bash = shutil.which("bash")
+        if shutil_bash and not shutil_bash.lower().endswith(r"system32\bash.exe"):
+            candidates.append(shutil_bash)
+
+        for bash_cmd in candidates:
+            if Path(bash_cmd).is_file():
+                try:
+                    res = subprocess.run(
+                        [bash_cmd, "-n"],
+                        input=script_content.encode("utf-8"),
+                        capture_output=True,
+                        timeout=5,
+                    )
+                    if res.returncode != 0:
+                        return res.stderr.decode("utf-8", errors="replace")
+                    return None
+                except Exception:
+                    pass
 
         # 2. WSL bridge check if on Windows
         if sys.platform == "win32":

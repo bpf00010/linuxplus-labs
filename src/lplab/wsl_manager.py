@@ -300,6 +300,55 @@ default={student_user}
         raise RuntimeError(f"Failed to write /etc/wsl.conf: {err or out}")
 
 
+def wait_for_systemd(
+    distro_name: str,
+    timeout_s: int = 45,
+    progress_callback: Optional[Callable[[str], None]] = None,
+) -> bool:
+    """Wait for systemd to boot as PID 1 and transition to running or degraded state.
+
+    Raises RuntimeError if PID 1 is not systemd or initialization fails.
+    """
+    def log(msg: str) -> None:
+        if progress_callback:
+            progress_callback(msg)
+
+    # 1. Verify PID 1 is systemd
+    rc, out, _ = execute_cmd(distro_name, "ps -p 1 -o comm=", user="root", timeout=10)
+    pid1 = out.strip().lower()
+    if pid1 != "systemd":
+        log(f"PID 1 is '{pid1}' instead of systemd. Re-cycling WSL distro '{distro_name}'...")
+        terminate_distro(distro_name)
+        time.sleep(2)
+        rc, out, _ = execute_cmd(distro_name, "ps -p 1 -o comm=", user="root", timeout=10)
+        pid1 = out.strip().lower()
+        if pid1 != "systemd":
+            raise RuntimeError(
+                f"Distro '{distro_name}' failed to boot systemd as PID 1 (detected '{pid1}'). "
+                "Ensure WSL2 systemd support is enabled in /etc/wsl.conf and host WSL2 kernel is up to date."
+            )
+
+    # 2. Poll systemctl is-system-running until running or degraded
+    start_time = time.time()
+    last_status = "unknown"
+    while time.time() - start_time < timeout_s:
+        rc, out, _ = execute_cmd(
+            distro_name,
+            "systemctl is-system-running 2>&1",
+            user="root",
+            timeout=10,
+        )
+        status_lines = [line.strip().lower() for line in out.splitlines() if line.strip()]
+        last_status = status_lines[-1] if status_lines else "unknown"
+        if any(s in ("running", "degraded") for s in status_lines):
+            return True
+        time.sleep(2)
+
+    raise RuntimeError(
+        f"Distro '{distro_name}' systemd failed to initialize within {timeout_s}s (last state: '{last_status}')."
+    )
+
+
 def provision_distro(
     distro_name: str,
     install_dir: Path,
@@ -340,27 +389,9 @@ def provision_distro(
     terminate_distro(distro_name)
     time.sleep(2)
 
-    # 5. Boot and poll systemctl is-system-running (45s timeout)
+    # 5. Boot and verify systemd PID 1 initialization
     log("[5/6] Booting distro and waiting for systemd initialization...")
-    start_time = time.time()
-    systemd_ready = False
-    last_status = "unknown"
-    while time.time() - start_time < 45:
-        rc, out, _ = execute_cmd(
-            distro_name,
-            "systemctl is-system-running 2>&1",
-            user="root",
-            timeout=10,
-        )
-        status_lines = [line.strip().lower() for line in out.splitlines() if line.strip()]
-        last_status = status_lines[-1] if status_lines else "unknown"
-        if any(s in ("running", "degraded") for s in status_lines):
-            systemd_ready = True
-            break
-        time.sleep(2)
-
-    if not systemd_ready:
-        log(f"Warning: systemd state after timeout: '{last_status}'. Continuing...")
+    wait_for_systemd(distro_name, timeout_s=45, progress_callback=progress_callback)
 
     # 6. Execute setup.sh via stdin & install BRIEF.md (chmod 444)
     log("[6/6] Executing lab setup script and deploying BRIEF.md...")

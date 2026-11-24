@@ -129,6 +129,13 @@ class LabEngine:
             progress_callback=progress_callback,
         )
 
+        # Sanity assertion: systemctl is-system-running must respond and not be offline
+        rc, out, _ = wsl_mgr.execute_cmd(manifest.distro_name, "systemctl is-system-running 2>&1", user="root")
+        if "offline" in out.lower():
+            raise RuntimeError(
+                f"Distro '{manifest.distro_name}' systemd manager is offline after setup: {out}"
+            )
+
         update_lab_state(
             self.config,
             lab_id=manifest.id,

@@ -10,19 +10,28 @@ from typing import Callable, Optional, Tuple
 UBUNTU_PACKAGES = [
     "systemd",
     "systemd-sysv",
+    "dbus",
+    "dbus-user-session",
+    "libpam-systemd",
     "sudo",
     "iproute2",
+    "iputils-ping",
     "nftables",
+    "dnsutils",
     "openssh-server",
+    "procps",
     "acl",
     "logrotate",
     "curl",
     "jq",
+    "vim-tiny",
     "e2fsprogs",
     "util-linux",
     "nginx",
-    "passwd",
-    "procps",
+    "openssl",
+    "python3",
+    "cron",
+    "ca-certificates",
 ]
 
 ROCKY_PACKAGES = [
@@ -42,6 +51,11 @@ ROCKY_PACKAGES = [
     "which",
     "findutils",
     "procps-ng",
+    "dbus-daemon",
+    "dbus-tools",
+    "openssl",
+    "python3",
+    "cronie",
 ]
 
 
@@ -92,6 +106,10 @@ def generate_dockerfile(base_image: str) -> str:
         return f"""FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends {pkgs} \\
+    && rm -f /usr/sbin/policy-rc.d \\
+    && ln -sf /lib/systemd/systemd /sbin/init \\
+    && mkdir -p /run/sshd \\
+    && (systemctl unmask systemd-journald.service dbus.service 2>/dev/null || true) \\
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 CMD ["/sbin/init"]
 """
@@ -100,6 +118,8 @@ CMD ["/sbin/init"]
         return f"""FROM rockylinux:9
 RUN dnf install -y epel-release || true
 RUN dnf install -y --allowerasing {pkgs} \\
+    && ln -sf /usr/lib/systemd/systemd /sbin/init \\
+    && mkdir -p /run/sshd \\
     && dnf clean all
 CMD ["/sbin/init"]
 """
