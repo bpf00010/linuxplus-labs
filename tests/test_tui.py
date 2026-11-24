@@ -137,3 +137,32 @@ async def test_tui_logging_worker_populates_richlog_and_history():
 
         log_widget = app.query_one("#log-view", RichLog)
         assert len(log_widget.lines) >= 2
+
+
+@pytest.mark.asyncio
+async def test_tui_initial_mount_renders_metadata_and_acceptance_criteria():
+    """Verify that on initial startup, lab-01 metadata, acceptance criteria, and work order are loaded."""
+    config = load_config()
+    app = LabEngineApp(config=config)
+
+    async with app.run_test() as pilot:
+        await pilot.pause(0.2)
+
+        meta_box = app.query_one("#lab-meta-box", Static)
+        criteria_box = app.query_one("#acceptance-criteria-box", Static)
+        work_order = app.query_one("#work-order-markdown", Markdown)
+
+        meta_text = str(meta_box.render())
+        criteria_text = str(criteria_box.render())
+
+        # Check lab-01 metadata displayed
+        assert "LAB-01" in meta_text or "Systemd Storage" in meta_text
+        assert "rockylinux-9" in meta_text
+
+        # Check acceptance criteria displayed
+        assert "ACCEPTANCE CRITERIA" in criteria_text
+        assert "appdata" in criteria_text.lower() or "journald" in criteria_text.lower() or "logrotate" in criteria_text.lower()
+
+        # Check work order markdown loaded
+        assert "TICKET-8921" in work_order._markdown or "Incident Summary" in work_order._markdown
+

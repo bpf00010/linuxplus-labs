@@ -79,16 +79,65 @@ def _expand_env_vars(data: Any) -> Any:
 def ensure_seed_labs_copied(bundled_labs_dir: Path, target_labs_dir: Path) -> None:
     """Copy missing seed lab directories from bundled read-only labs into target labs dir.
 
-    Never overwrite existing labs in target_labs_dir to preserve user modifications and AI generated labs.
+    Checks existing labs by ID (not just folder name) so upgrading lplab never creates duplicate IDs.
+    If an existing directory has the same ID under an old superseded folder name, cleans up the old
+    superseded directory and replaces it with the bundled version.
     """
     if not bundled_labs_dir.is_dir():
         return
     target_labs_dir.mkdir(parents=True, exist_ok=True)
+
+    # Map existing target labs by ID
+    existing_by_id: Dict[str, Path] = {}
+    for sub in target_labs_dir.iterdir():
+        if sub.is_dir():
+            for m_name in ("lab.yaml", "manifest.yaml"):
+                mf = sub / m_name
+                if mf.is_file():
+                    try:
+                        with open(mf, "r", encoding="utf-8") as f:
+                            data = yaml.safe_load(f)
+                        if isinstance(data, dict) and "id" in data:
+                            existing_by_id[str(data["id"])] = sub
+                            break
+                    except Exception:
+                        pass
+
     for item in bundled_labs_dir.iterdir():
-        if item.is_dir() and ((item / "lab.yaml").is_file() or (item / "manifest.yaml").is_file()):
-            dest_lab_dir = target_labs_dir / item.name
+        if not item.is_dir():
+            continue
+        seed_manifest_file = item / "lab.yaml"
+        if not seed_manifest_file.is_file():
+            seed_manifest_file = item / "manifest.yaml"
+        if not seed_manifest_file.is_file():
+            continue
+
+        seed_id: Optional[str] = None
+        try:
+            with open(seed_manifest_file, "r", encoding="utf-8") as f:
+                seed_data = yaml.safe_load(f)
+            if isinstance(seed_data, dict):
+                seed_id = str(seed_data.get("id", ""))
+        except Exception:
+            pass
+
+        dest_lab_dir = target_labs_dir / item.name
+        if seed_id and seed_id in existing_by_id:
+            old_dir = existing_by_id[seed_id]
+            if old_dir.name != item.name:
+                # Old superseded seed directory found with the same lab ID (e.g. lab-04-automation-timers)
+                try:
+                    shutil.rmtree(old_dir, ignore_errors=True)
+                except Exception:
+                    pass
+                shutil.copytree(item, dest_lab_dir)
+                existing_by_id[seed_id] = dest_lab_dir
+            # Else already exists with matching ID and folder name; preserve user changes
+        else:
             if not dest_lab_dir.exists():
                 shutil.copytree(item, dest_lab_dir)
+                if seed_id:
+                    existing_by_id[seed_id] = dest_lab_dir
 
 
 def load_config(custom_config_path: Optional[Path] = None) -> AppConfig:
@@ -163,9 +212,13 @@ def load_config(custom_config_path: Optional[Path] = None) -> AppConfig:
     # Extract AI config
     ai_raw = raw_config.get("ai", {})
     ai_cfg = AIConfig(
+        provider=ai_raw.get("provider", "ollama"),
         base_url=ai_raw.get("base_url", "http://localhost:11434/v1"),
-        api_key=ai_raw.get("api_key", "ollama"),
         model=ai_raw.get("model", "llama3"),
+        api_key=ai_raw.get("api_key", "ollama"),
+        api_key_env=ai_raw.get("api_key_env"),
+        temperature=float(ai_raw.get("temperature", 0.2)),
+        timeout_seconds=int(ai_raw.get("timeout_seconds", 180)),
     )
 
     custom_term = raw_config.get("custom_terminal_cmd")
@@ -240,3 +293,36 @@ def update_lab_state(
     current_state[lab_id] = record
     save_state(config, current_state)
     return record
+
+
+def save_config(config: AppConfig, target_path: Optional[Path] = None) -> Path:
+    """Persist AppConfig updates to config.yaml cleanly without overwriting unrelated fields."""
+    dest = target_path or config.config_file
+    if not dest:
+        base_state_dir, _ = get_default_storage_paths()
+        if is_frozen() or sys.platform == "win32":
+            dest = base_state_dir / "config.yaml"
+        else:
+            dest = find_project_root() / "config.yaml"
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    raw_data: Dict[str, Any] = {}
+    if dest.is_file():
+        try:
+            with open(dest, "r", encoding="utf-8") as f:
+                loaded = yaml.safe_load(f)
+                if isinstance(loaded, dict):
+                    raw_data = loaded
+        except Exception:
+            raw_data = {}
+
+    ai_dict = config.ai.model_dump()
+    raw_data["ai"] = ai_dict
+
+    temp_file = dest.with_suffix(".tmp")
+    with open(temp_file, "w", encoding="utf-8") as f:
+        yaml.safe_dump(raw_data, f, sort_keys=False, default_flow_style=False)
+    temp_file.replace(dest)
+    config.config_file = dest
+    return dest
+

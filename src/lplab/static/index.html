@@ -6,25 +6,28 @@
   <title>lplab // CompTIA Linux+ XK0-006</title>
   <style>
     :root {
-      --bg-canvas: #0A0A0A;
-      --bg-surface: #121212;
-      --bg-card: #181818;
-      --bg-card-hover: #222222;
-      --bg-card-active: #2A2A2A;
-      --bg-terminal: #0A0A0A;
+      --bg-canvas: #0F1419;
+      --bg-surface: #161C24;
+      --bg-card: #161C24;
+      --bg-card-hover: #1D2530;
+      --bg-card-active: #1D2530;
+      --bg-terminal: #0F1419;
 
-      --border-subtle: #222222;
-      --border-default: #2A2A2A;
-      --border-hover: #555555;
-      --border-focus: #FFFFFF;
+      --border-subtle: #1D2530;
+      --border-default: #2A3441;
+      --border-hover: #3E4C5E;
+      --border-focus: #2F6FEB;
 
-      --text-primary: #FFFFFF;
-      --text-secondary: #A0A0A0;
-      --text-muted: #6E6E6E;
+      --text-primary: #E6EDF3;
+      --text-secondary: #9BA7B4;
+      --text-muted: #6E7B8B;
 
-      --btn-primary-bg: #FFFFFF;
-      --btn-primary-text: #0A0A0A;
-      --btn-primary-hover: #DCDCDC;
+      --accent-blue: #2F6FEB;
+      --accent-blue-hover: #3D7BF5;
+
+      --btn-primary-bg: #2F6FEB;
+      --btn-primary-text: #FFFFFF;
+      --btn-primary-hover: #3D7BF5;
 
       --font-sans: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
       --font-mono: "Cascadia Code", "Consolas", monospace;
@@ -72,14 +75,14 @@
     .brand-logo {
       width: 24px;
       height: 24px;
-      background: #FFFFFF;
+      background: var(--accent-blue);
       border-radius: 2px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 800;
       font-size: 13px;
-      color: #0A0A0A;
+      color: #FFFFFF;
       font-family: var(--font-mono);
       letter-spacing: -0.5px;
     }
@@ -222,13 +225,13 @@
 
     .btn-danger {
       background: var(--bg-card);
-      color: #FFFFFF;
-      border-color: #555555;
+      color: #F85149;
+      border-color: #2A3441;
     }
 
     .btn-danger:hover:not(:disabled) {
-      border-color: #FFFFFF;
-      background: #2A2A2A;
+      border-color: #F85149;
+      background: rgba(218, 54, 51, 0.14);
     }
 
     /* Main Layout */
@@ -322,6 +325,7 @@
       flex-direction: column;
       gap: 6px;
       transition: background 0.1s ease, border-color 0.1s ease;
+      border-left: 3px solid transparent;
     }
 
     .lab-card:hover {
@@ -331,7 +335,8 @@
 
     .lab-card.active {
       background: var(--bg-card-active);
-      border-color: var(--border-focus);
+      border-color: var(--accent-blue);
+      border-left: 3px solid var(--accent-blue);
     }
 
     .lab-card-header {
@@ -345,7 +350,7 @@
       font-family: var(--font-mono);
       font-size: 12px;
       font-weight: 700;
-      color: #FFFFFF;
+      color: var(--text-primary);
     }
 
     .distro-pill {
@@ -353,7 +358,7 @@
       font-size: 10px;
       padding: 1px 5px;
       border-radius: 2px;
-      background: #0A0A0A;
+      background: #1D2530;
       color: var(--text-secondary);
       border: 1px solid var(--border-default);
       text-transform: uppercase;
@@ -373,16 +378,9 @@
     .lab-card-footer {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end;
       gap: 8px;
       margin-top: 2px;
-    }
-
-    .difficulty-tag {
-      font-size: 10px;
-      text-transform: uppercase;
-      font-family: var(--font-mono);
-      color: var(--text-muted);
     }
 
     .status-badge {
@@ -394,20 +392,39 @@
       font-family: var(--font-mono);
       font-weight: 700;
       letter-spacing: 0.3px;
-      background: #0A0A0A;
+      background: #222B36;
       border: 1px solid var(--border-default);
-      color: #FFFFFF;
+      color: var(--text-secondary);
+    }
+
+    .status-badge.new, .status-badge.stopped {
+      background: #222B36;
+      border-color: #2A3441;
+      color: #9BA7B4;
+    }
+
+    .status-badge.running {
+      background: rgba(46, 160, 67, 0.14);
+      border-color: rgba(46, 160, 67, 0.3);
+      color: #2EA043;
     }
 
     .status-badge.passed {
-      border-color: #FFFFFF;
-      background: #FFFFFF;
-      color: #0A0A0A;
+      background: rgba(46, 160, 67, 0.14);
+      border-color: rgba(46, 160, 67, 0.3);
+      color: #2EA043;
     }
 
     .status-badge.failed {
-      border-color: #555555;
-      color: #FFFFFF;
+      background: rgba(218, 54, 51, 0.14);
+      border-color: rgba(218, 54, 51, 0.3);
+      color: #F85149;
+    }
+
+    .status-badge.provisioning, .status-badge.resetting {
+      background: rgba(210, 153, 34, 0.14);
+      border-color: rgba(210, 153, 34, 0.3);
+      color: #D29922;
     }
 
     /* Main Detail Panel */
@@ -541,8 +558,9 @@
     }
 
     .tab-btn.active {
-      color: #FFFFFF;
-      border-bottom-color: #FFFFFF;
+      color: var(--text-primary);
+      border-bottom-color: var(--accent-blue);
+      font-weight: 700;
     }
 
     .tab-badge {
@@ -732,11 +750,11 @@
     }
 
     .check-card.pass {
-      border-left: 3px solid #FFFFFF;
+      border-left: 3px solid #2EA043;
     }
 
     .check-card.fail {
-      border-left: 3px solid #555555;
+      border-left: 3px solid #F85149;
     }
 
     .check-card-header {
@@ -759,14 +777,20 @@
       padding: 1px 5px;
       border-radius: 2px;
       border: 1px solid var(--border-default);
-      background: #0A0A0A;
-      color: #FFFFFF;
+      background: #222B36;
+      color: var(--text-secondary);
     }
 
     .check-badge.pass {
-      background: #FFFFFF;
-      color: #0A0A0A;
-      border-color: #FFFFFF;
+      background: rgba(46, 160, 67, 0.14);
+      color: #2EA043;
+      border-color: rgba(46, 160, 67, 0.3);
+    }
+
+    .check-badge.fail {
+      background: rgba(218, 54, 51, 0.14);
+      color: #F85149;
+      border-color: rgba(218, 54, 51, 0.3);
     }
 
     .check-id {
@@ -967,6 +991,74 @@
       border-color: var(--border-focus);
     }
 
+    .ai-active-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      background: var(--bg-card-hover);
+      border: 1px solid var(--border-default);
+      border-radius: 2px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-secondary);
+    }
+
+    .ai-detect-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    .ai-detect-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: 2px;
+      padding: 6px 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.1s ease;
+    }
+
+    .ai-detect-card:hover {
+      border-color: var(--accent-blue);
+      background: var(--bg-card-hover);
+    }
+
+    .ai-detect-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+    }
+
+    .ai-detect-sub {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+
+    .btn-link {
+      background: none;
+      border: none;
+      color: var(--accent-blue);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-decoration: underline;
+      padding: 0;
+    }
+
+    .btn-link:hover {
+      color: var(--accent-blue-hover);
+    }
+
     .modal-footer {
       padding: 10px 16px;
       border-top: 1px solid var(--border-default);
@@ -1008,6 +1100,9 @@
     </div>
 
     <div class="top-actions">
+      <button class="btn btn-secondary" id="btn-ai-settings-toggle" onclick="openAISettingsModal()" title="Configure AI Provider & Models">
+        AI: <span id="header-ai-indicator">[CONFIGURING]</span>
+      </button>
       <button class="btn btn-secondary" onclick="fetchLabs()" title="Refresh lab list and states">[REFRESH]</button>
       <button class="btn btn-primary" onclick="openGenerateModal()">[+ NEW LAB]</button>
     </div>
@@ -1137,6 +1232,78 @@
     </main>
   </div>
 
+  <!-- AI Provider & Model Configuration Modal -->
+  <div class="modal-overlay" id="modal-ai-settings">
+    <div class="modal-card" style="width: 580px;">
+      <div class="modal-header">
+        <div class="modal-title">AI GENERATOR CONFIGURATION</div>
+        <button class="modal-close" onclick="closeAISettingsModal()">[X]</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <span style="font-size:11px; font-family:var(--font-mono); color:var(--text-secondary);">DETECT LOCAL PROVIDERS</span>
+          <button class="btn btn-secondary" style="padding:3px 8px; font-size:11px;" onclick="detectLocalAIProviders()">[AUTO-DETECT]</button>
+        </div>
+        <div id="ai-detect-cards" class="ai-detect-cards" style="display:none;"></div>
+
+        <div class="form-group" style="margin-top:8px;">
+          <label class="form-label" for="cfg-ai-provider">PROVIDER PRESET</label>
+          <select class="form-control" id="cfg-ai-provider" onchange="onAIProviderChange()">
+            <option value="ollama">Ollama (Local Default)</option>
+            <option value="open_webui">Open WebUI (Local/Network)</option>
+            <option value="openrouter">OpenRouter (Cloud API)</option>
+            <option value="custom">Custom OpenAI-Compatible</option>
+          </select>
+          <span id="cfg-ai-provider-hint" style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono); margin-top:2px;"></span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="cfg-ai-base-url">BASE URL</label>
+          <input type="text" class="form-control" id="cfg-ai-base-url" placeholder="http://localhost:11434/v1">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="cfg-ai-api-key">API KEY (STORED LOCALLY)</label>
+          <div style="display:flex; gap:8px;">
+            <input type="password" class="form-control" id="cfg-ai-api-key" placeholder="Enter API key or leave blank to keep saved">
+            <button class="btn btn-secondary" style="padding:4px 8px; font-size:10px;" id="btn-clear-key" onclick="toggleClearApiKey()">[CLEAR]</button>
+          </div>
+          <span id="cfg-ai-key-status" style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono);"></span>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
+          <button class="btn btn-secondary" id="btn-test-ai-models" style="padding:4px 10px; font-size:11px;" onclick="testAIConnectionAndFetchModels()">[TEST CONNECTION & FETCH MODELS]</button>
+          <span id="ai-test-feedback" style="font-size:11px; font-family:var(--font-mono);"></span>
+        </div>
+
+        <div class="form-group" style="margin-top:4px;">
+          <label class="form-label" for="cfg-ai-model">MODEL SELECTION</label>
+          <div style="display:flex; gap:8px;">
+            <select class="form-control" id="cfg-ai-model" onchange="onAIModelSelectChange()" style="flex:1;">
+              <option value="llama3">llama3</option>
+            </select>
+            <input type="text" class="form-control" id="cfg-ai-model-custom" placeholder="or custom model slug" style="flex:1;">
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px;">
+          <div class="form-group" style="flex:1;">
+            <label class="form-label" for="cfg-ai-temp">TEMPERATURE (0.0 - 2.0)</label>
+            <input type="number" class="form-control" id="cfg-ai-temp" step="0.1" min="0" max="2" value="0.2">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label class="form-label" for="cfg-ai-timeout">TIMEOUT (SECONDS)</label>
+            <input type="number" class="form-control" id="cfg-ai-timeout" min="10" max="600" value="180">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeAISettingsModal()">Cancel</button>
+        <button class="btn btn-primary" id="btn-save-ai-cfg" onclick="saveAISettings()">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
   <!-- AI Lab Generator Modal -->
   <div class="modal-overlay" id="modal-generate">
     <div class="modal-card">
@@ -1145,6 +1312,10 @@
         <button class="modal-close" onclick="closeGenerateModal()">[X]</button>
       </div>
       <div class="modal-body">
+        <div class="ai-active-banner">
+          <span>ACTIVE: <strong id="gen-modal-active-ai" style="color:var(--text-primary);">Ollama / llama3</strong></span>
+          <button class="btn-link" onclick="openAISettingsModal()">[Edit AI Settings]</button>
+        </div>
         <div class="form-group">
           <label class="form-label" for="gen-domain">XK0-006 OBJECTIVE DOMAIN</label>
           <select class="form-control" id="gen-domain">
@@ -1162,8 +1333,16 @@
         <div class="form-group">
           <label class="form-label" for="gen-distro">BASE LINUX DISTRIBUTION</label>
           <select class="form-control" id="gen-distro">
+            <option value="ubuntu-24.04" selected>Ubuntu 24.04 LTS (Debian-based Default)</option>
             <option value="rockylinux-9">Rocky Linux 9 (RHEL-compatible)</option>
-            <option value="ubuntu-24.04">Ubuntu 24.04 LTS (Debian-based)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="gen-difficulty">DIFFICULTY</label>
+          <select class="form-control" id="gen-difficulty">
+            <option value="beginner">Beginner</option>
+            <option value="intermediate" selected>Intermediate</option>
+            <option value="advanced">Advanced</option>
           </select>
         </div>
         <div id="gen-status-box" style="display:none; padding:8px; background:var(--bg-canvas); border:1px solid var(--border-default); font-size:11px; font-family:var(--font-mono); color:#FFFFFF;">
@@ -1436,6 +1615,8 @@
       filtered.forEach(lab => {
         const card = document.createElement("div");
         card.className = `lab-card ${lab.id === selectedLabId ? "active" : ""}`;
+        card.dataset.id = lab.id;
+        card.dataset.slug = lab.slug || lab.id;
         card.onclick = () => selectLab(lab.id, true);
 
         let badgeClass = "stopped";
@@ -1467,7 +1648,6 @@
           </div>
           <div class="lab-card-title">${lab.title}</div>
           <div class="lab-card-footer">
-            <span class="difficulty-tag">${lab.difficulty}</span>
             <span class="status-badge ${badgeClass}">${badgeText}</span>
           </div>
         `;
@@ -1478,11 +1658,11 @@
     // --- Lab Selection & Detail View ---
     async function selectLab(labId, fetchBrief = true) {
       selectedLabId = labId;
-      const lab = allLabs.find(l => l.id === labId);
+      const lab = allLabs.find(l => l.id === labId || l.slug === labId);
       if (!lab) return;
 
       document.querySelectorAll(".lab-card").forEach(el => {
-        el.classList.toggle("active", el.querySelector(".lab-card-id")?.textContent === labId.toUpperCase());
+        el.classList.toggle("active", el.dataset.id === lab.id);
       });
 
       document.getElementById("detail-empty-view").style.display = "none";
@@ -1710,11 +1890,262 @@
       }
     }
 
+    // --- AI Configuration Management ---
+    let currentAIConfig = null;
+    let clearApiKeyFlag = false;
+
+    async function loadAIConfig() {
+      try {
+        const res = await fetch("/api/ai/config");
+        if (res.ok) {
+          currentAIConfig = await res.json();
+          updateAIHeaderIndicator(currentAIConfig);
+        }
+      } catch (e) {
+        console.warn("Could not load AI config", e);
+      }
+    }
+
+    function updateAIHeaderIndicator(cfg) {
+      if (!cfg) return;
+      const prov = (cfg.provider || "AI").toUpperCase();
+      const model = cfg.model || "none";
+      const ind = document.getElementById("header-ai-indicator");
+      if (ind) ind.textContent = `[${prov}: ${model}]`;
+      const genBanner = document.getElementById("gen-modal-active-ai");
+      if (genBanner) genBanner.textContent = `${prov} / ${model}`;
+    }
+
+    function openAISettingsModal() {
+      if (!currentAIConfig) {
+        loadAIConfig().then(() => populateAISettingsForm());
+      } else {
+        populateAISettingsForm();
+      }
+      document.getElementById("modal-ai-settings").classList.add("active");
+    }
+
+    function closeAISettingsModal() {
+      document.getElementById("modal-ai-settings").classList.remove("active");
+    }
+
+    function populateAISettingsForm() {
+      if (!currentAIConfig) return;
+      document.getElementById("cfg-ai-provider").value = currentAIConfig.provider || "ollama";
+      document.getElementById("cfg-ai-base-url").value = currentAIConfig.base_url || "";
+      document.getElementById("cfg-ai-temp").value = currentAIConfig.temperature !== undefined ? currentAIConfig.temperature : 0.2;
+      document.getElementById("cfg-ai-timeout").value = currentAIConfig.timeout_seconds || 180;
+
+      const keyInput = document.getElementById("cfg-ai-api-key");
+      const keyStatus = document.getElementById("cfg-ai-key-status");
+      clearApiKeyFlag = false;
+      keyInput.value = "";
+      document.getElementById("btn-clear-key").textContent = "[CLEAR]";
+
+      if (currentAIConfig.has_api_key) {
+        keyInput.placeholder = "[Saved in config.yaml - leave blank to keep]";
+        keyStatus.textContent = "Status: Local API key is configured";
+        keyStatus.style.color = "var(--text-secondary)";
+      } else {
+        keyInput.placeholder = "Enter API key if required";
+        keyStatus.textContent = currentAIConfig.api_key_env ? `Environment: ${currentAIConfig.api_key_env}` : "No API key configured";
+      }
+
+      const modelSelect = document.getElementById("cfg-ai-model");
+      modelSelect.innerHTML = `<option value="${currentAIConfig.model || 'llama3'}">${currentAIConfig.model || 'llama3'}</option>`;
+      document.getElementById("cfg-ai-model-custom").value = currentAIConfig.model || "";
+      document.getElementById("ai-test-feedback").textContent = "";
+
+      onAIProviderChange();
+    }
+
+    function toggleClearApiKey() {
+      clearApiKeyFlag = !clearApiKeyFlag;
+      const keyInput = document.getElementById("cfg-ai-api-key");
+      const keyStatus = document.getElementById("cfg-ai-key-status");
+      const btn = document.getElementById("btn-clear-key");
+      if (clearApiKeyFlag) {
+        keyInput.value = "";
+        keyInput.placeholder = "API key will be cleared on Save";
+        keyStatus.textContent = "API key marked for removal";
+        keyStatus.style.color = "#F85149";
+        btn.textContent = "[UNDO]";
+      } else {
+        keyInput.placeholder = currentAIConfig && currentAIConfig.has_api_key ? "[Saved in config.yaml - leave blank to keep]" : "Enter API key if required";
+        keyStatus.textContent = currentAIConfig && currentAIConfig.has_api_key ? "Status: Local API key is configured" : "No API key configured";
+        keyStatus.style.color = "var(--text-secondary)";
+        btn.textContent = "[CLEAR]";
+      }
+    }
+
+    function onAIProviderChange() {
+      const prov = document.getElementById("cfg-ai-provider").value;
+      const hint = document.getElementById("cfg-ai-provider-hint");
+      const urlInput = document.getElementById("cfg-ai-base-url");
+
+      if (prov === "ollama") {
+        hint.textContent = "Standard local Ollama endpoint (default: http://localhost:11434/v1)";
+        if (!urlInput.value || urlInput.value.includes("openrouter") || urlInput.value.includes(":8080") || urlInput.value.includes(":1234")) {
+          urlInput.value = "http://localhost:11434/v1";
+        }
+      } else if (prov === "open_webui") {
+        hint.textContent = "Open WebUI API (API key under Settings -> Account -> API Keys)";
+        if (!urlInput.value || urlInput.value.includes("11434") || urlInput.value.includes("openrouter") || urlInput.value.includes(":1234")) {
+          urlInput.value = "http://localhost:8080/api";
+        }
+      } else if (prov === "openrouter") {
+        hint.textContent = "OpenRouter cloud API (requires API key from openrouter.ai/keys)";
+        if (!urlInput.value || urlInput.value.includes("localhost") || urlInput.value.includes("127.0.0.1")) {
+          urlInput.value = "https://openrouter.ai/api/v1";
+        }
+      } else {
+        hint.textContent = "Custom OpenAI-compatible server (e.g., LM Studio on port 1234)";
+        if (!urlInput.value) {
+          urlInput.value = "http://localhost:1234/v1";
+        }
+      }
+    }
+
+    async function detectLocalAIProviders() {
+      const container = document.getElementById("ai-detect-cards");
+      container.style.display = "flex";
+      container.innerHTML = `<div style="font-size:11px; font-family:var(--font-mono); color:var(--text-muted); padding:4px;">Probing localhost for running LLM services...</div>`;
+
+      try {
+        const res = await fetch("/api/ai/detect");
+        const data = await res.json();
+        const list = data.detected || [];
+        if (list.length === 0) {
+          container.innerHTML = `<div style="font-size:11px; font-family:var(--font-mono); color:var(--text-muted); padding:4px;">No local AI servers detected on ports 11434, 8080, 3000, 1234.</div>`;
+          return;
+        }
+
+        container.innerHTML = "";
+        list.forEach(item => {
+          const card = document.createElement("div");
+          card.className = "ai-detect-card";
+          const count = item.models ? item.models.length : 0;
+          card.innerHTML = `
+            <div>
+              <div class="ai-detect-title">${item.name}</div>
+              <div class="ai-detect-sub">${item.base_url} &bull; ${count} models installed</div>
+            </div>
+            <button class="btn btn-secondary" style="padding:2px 8px; font-size:10px;">[SELECT]</button>
+          `;
+          card.onclick = () => selectDetectedProvider(item);
+          container.appendChild(card);
+        });
+      } catch (e) {
+        container.innerHTML = `<div style="font-size:11px; font-family:var(--font-mono); color:#F85149; padding:4px;">Detection error: ${e.message}</div>`;
+      }
+    }
+
+    function selectDetectedProvider(item) {
+      document.getElementById("cfg-ai-provider").value = item.provider || "ollama";
+      document.getElementById("cfg-ai-base-url").value = item.base_url;
+      onAIProviderChange();
+
+      if (item.models && item.models.length > 0) {
+        const sel = document.getElementById("cfg-ai-model");
+        sel.innerHTML = item.models.map(m => `<option value="${m}">${m}</option>`).join("");
+        sel.value = item.recommended_model || item.models[0];
+        document.getElementById("cfg-ai-model-custom").value = sel.value;
+      }
+      const feedback = document.getElementById("ai-test-feedback");
+      feedback.textContent = `[CONFIGURED: ${item.name}]`;
+      feedback.style.color = "#2EA043";
+    }
+
+    async function testAIConnectionAndFetchModels() {
+      const provider = document.getElementById("cfg-ai-provider").value;
+      const base_url = document.getElementById("cfg-ai-base-url").value.trim();
+      const api_key = document.getElementById("cfg-ai-api-key").value.trim();
+      const feedback = document.getElementById("ai-test-feedback");
+
+      feedback.textContent = "[TESTING...]";
+      feedback.style.color = "var(--text-muted)";
+
+      try {
+        const res = await fetch("/api/ai/models", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ provider, base_url, api_key: api_key || null })
+        });
+        const data = await res.json();
+        if (data.ok && data.models && data.models.length > 0) {
+          feedback.textContent = `[OK: ${data.models.length} MODELS]`;
+          feedback.style.color = "#2EA043";
+          const sel = document.getElementById("cfg-ai-model");
+          sel.innerHTML = data.models.map(m => `<option value="${m}">${m}</option>`).join("");
+          if (data.models.length > 0) {
+            sel.value = data.models[0];
+            document.getElementById("cfg-ai-model-custom").value = data.models[0];
+          }
+        } else {
+          feedback.textContent = `[FAILED: ${data.message || 'NO MODELS FOUND'}]`;
+          feedback.style.color = "#F85149";
+        }
+      } catch (e) {
+        feedback.textContent = `[ERROR: ${e.message}]`;
+        feedback.style.color = "#F85149";
+      }
+    }
+
+    function onAIModelSelectChange() {
+      const sel = document.getElementById("cfg-ai-model");
+      document.getElementById("cfg-ai-model-custom").value = sel.value;
+    }
+
+    async function saveAISettings() {
+      const provider = document.getElementById("cfg-ai-provider").value;
+      const base_url = document.getElementById("cfg-ai-base-url").value.trim();
+      const api_key = document.getElementById("cfg-ai-api-key").value.trim();
+      const customModel = document.getElementById("cfg-ai-model-custom").value.trim();
+      const selectModel = document.getElementById("cfg-ai-model").value;
+      const model = customModel || selectModel || "llama3";
+      const temperature = parseFloat(document.getElementById("cfg-ai-temp").value) || 0.2;
+      const timeout_seconds = parseInt(document.getElementById("cfg-ai-timeout").value) || 180;
+
+      const payload = {
+        provider,
+        base_url,
+        model,
+        temperature,
+        timeout_seconds,
+        clear_api_key: clearApiKeyFlag,
+      };
+      if (api_key) {
+        payload.api_key = api_key;
+      }
+
+      try {
+        const res = await fetch("/api/ai/config", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          currentAIConfig = await res.json();
+          updateAIHeaderIndicator(currentAIConfig);
+          addLogLine("success", `AI settings saved: ${provider} / ${model}`);
+          closeAISettingsModal();
+        } else {
+          const err = await res.json();
+          alert(`Failed to save AI config: ${err.detail || JSON.stringify(err)}`);
+        }
+      } catch (e) {
+        alert(`Save error: ${e.message}`);
+      }
+    }
+
     // --- AI Lab Generation ---
     function openGenerateModal() {
       document.getElementById("gen-status-box").style.display = "none";
       document.getElementById("btn-submit-gen").disabled = false;
       document.getElementById("btn-cancel-gen").disabled = false;
+      if (currentAIConfig) {
+        updateAIHeaderIndicator(currentAIConfig);
+      }
       document.getElementById("modal-generate").classList.add("active");
     }
 
@@ -1726,6 +2157,7 @@
       const domain = document.getElementById("gen-domain").value;
       const topic = document.getElementById("gen-topic").value.trim();
       const base_image = document.getElementById("gen-distro").value;
+      const difficulty = document.getElementById("gen-difficulty").value;
 
       if (!topic) {
         alert("Please enter a scenario topic.");
@@ -1737,14 +2169,15 @@
       document.getElementById("btn-submit-gen").disabled = true;
       document.getElementById("btn-cancel-gen").disabled = true;
 
-      addLogLine("info", `Requesting AI generation for ${domain}: "${topic}" (${base_image})...`);
+      addLogLine("info", `Requesting AI generation for ${domain}: "${topic}" (${base_image}, ${difficulty})...`);
+      switchTab("logs");
       setJobStatus("GENERATING");
 
       try {
         const res = await fetch("/api/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ domain, topic, base_image })
+          body: JSON.stringify({ domain, topic, base_image, difficulty })
         });
         const data = await res.json();
         if (res.ok) {
@@ -1863,6 +2296,9 @@
         }
       } else if (evt.type === "images_status") {
         updateImagePills(evt.images);
+      } else if (evt.type === "ai_config_updated") {
+        currentAIConfig = evt.config;
+        updateAIHeaderIndicator(currentAIConfig);
       } else if (evt.type === "refresh_labs") {
         fetchLabs();
       }
@@ -1872,6 +2308,7 @@
     window.addEventListener("DOMContentLoaded", () => {
       fetchLabs();
       checkImagesStatus();
+      loadAIConfig();
       initSSE();
     });
   </script>

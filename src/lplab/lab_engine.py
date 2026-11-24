@@ -2,6 +2,7 @@
 
 from datetime import datetime
 import json
+import logging
 import re
 import shutil
 from pathlib import Path
@@ -18,6 +19,8 @@ from lplab.models import (
 )
 import lplab.wsl_manager as wsl_mgr
 
+logger = logging.getLogger("lplab.lab_engine")
+
 
 class LabEngine:
     """Orchestrator for managing the lifecycle of CompTIA Linux+ WSL labs."""
@@ -26,11 +29,12 @@ class LabEngine:
         self.config = config
 
     def discover_labs(self) -> List[Tuple[LabManifest, Path]]:
-        """Discover all valid lab scenarios in config.labs_dir."""
+        """Discover all valid lab scenarios in config.labs_dir, deduplicating strictly by manifest.id."""
         labs: List[Tuple[LabManifest, Path]] = []
         if not self.config.labs_dir.is_dir():
             return labs
 
+        seen_ids: set[str] = set()
         for sub in sorted(self.config.labs_dir.iterdir()):
             if not sub.is_dir():
                 continue
@@ -40,6 +44,12 @@ class LabEngine:
                     with open(manifest_file, "r", encoding="utf-8") as f:
                         data = yaml.safe_load(f)
                     manifest = LabManifest.model_validate(data)
+                    if manifest.id in seen_ids:
+                        logger.warning(
+                            f"Duplicate lab ID '{manifest.id}' found in '{sub}'. Skipping duplicate entry."
+                        )
+                        continue
+                    seen_ids.add(manifest.id)
                     labs.append((manifest, sub))
                 except Exception as e:
                     # Ignore malformed directories or log

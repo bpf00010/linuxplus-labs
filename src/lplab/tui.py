@@ -30,7 +30,7 @@ from lplab.models import LabManifest, LabRuntimeStatus, LabStateRecord, VerifyRe
 
 
 class ResetConfirmModal(ModalScreen[bool]):
-    """Monochrome confirmation modal before wiping and resetting a lab."""
+    """Corporate confirmation modal before wiping and resetting a lab."""
 
     BINDINGS = [
         Binding("escape", "cancel", "Cancel"),
@@ -39,15 +39,15 @@ class ResetConfirmModal(ModalScreen[bool]):
     DEFAULT_CSS = """
     ResetConfirmModal {
         align: center middle;
-        background: rgba(0, 0, 0, 0.7);
+        background: rgba(15, 20, 25, 0.85);
     }
     #confirm-dialog {
         padding: 1 2;
         width: 64;
         height: auto;
-        border: solid #555555;
-        background: #121212;
-        color: #ffffff;
+        border: solid #2a3441;
+        background: #161c24;
+        color: #e6edf3;
     }
     #confirm-buttons {
         margin-top: 1;
@@ -55,22 +55,22 @@ class ResetConfirmModal(ModalScreen[bool]):
     }
     Button {
         margin-left: 2;
-        background: #181818;
-        color: #ffffff;
-        border: solid #3a3a3a;
+        background: #1d2530;
+        color: #e6edf3;
+        border: solid #2a3441;
     }
     Button:hover {
-        background: #2a2a2a;
-        border: solid #ffffff;
+        background: #2a3441;
+        border: solid #3e4c5e;
     }
     #btn-reset {
-        background: #ffffff;
-        color: #0a0a0a;
+        background: #da3633;
+        color: #ffffff;
         text-style: bold;
-        border: solid #ffffff;
+        border: solid #f85149;
     }
     #btn-reset:hover {
-        background: #dcdcdc;
+        background: #f85149;
     }
     """
 
@@ -80,9 +80,9 @@ class ResetConfirmModal(ModalScreen[bool]):
 
     def compose(self) -> ComposeResult:
         yield Vertical(
-            Label("[bold white]CONFIRM LAB RESET[/bold white]\n"),
-            Label(f"Are you sure you want to completely wipe and rebuild:\n[bold white]{self.lab_title}[/bold white]?\n"),
-            Label("[dim]All modifications, runtime state, and files will be permanently erased.[/dim]"),
+            Label("[bold #f85149]CONFIRM LAB RESET[/bold #f85149]\n"),
+            Label(f"Are you sure you want to completely wipe and rebuild:\n[bold #e6edf3]{self.lab_title}[/bold #e6edf3]?\n"),
+            Label("[#6e7b8b]All modifications, runtime state, and files will be permanently erased.[/#6e7b8b]"),
             Horizontal(
                 Button("Cancel", variant="default", id="btn-cancel"),
                 Button("Reset Lab", variant="default", id="btn-reset"),
@@ -103,7 +103,7 @@ class ResetConfirmModal(ModalScreen[bool]):
 
 
 class GenerateModal(ModalScreen[Optional[Tuple[str, str, str]]]):
-    """Monochrome modal dialog for generating a new AI lab scenario."""
+    """Corporate modal dialog for generating a new AI lab scenario."""
 
     BINDINGS = [
         Binding("escape", "cancel", "Cancel"),
@@ -112,34 +112,34 @@ class GenerateModal(ModalScreen[Optional[Tuple[str, str, str]]]):
     DEFAULT_CSS = """
     GenerateModal {
         align: center middle;
-        background: rgba(0, 0, 0, 0.7);
+        background: rgba(15, 20, 25, 0.85);
     }
     #gen-dialog {
         padding: 1 2;
         width: 72;
         height: auto;
-        border: solid #555555;
-        background: #121212;
-        color: #ffffff;
+        border: solid #2a3441;
+        background: #161c24;
+        color: #e6edf3;
     }
     .form-item {
         margin-bottom: 1;
     }
     Input {
-        background: #0a0a0a;
-        color: #ffffff;
-        border: solid #333333;
+        background: #0f1419;
+        color: #e6edf3;
+        border: solid #2a3441;
     }
     Input:focus {
-        border: solid #ffffff;
+        border: solid #2f6feb;
     }
     Select {
-        background: #0a0a0a;
-        color: #ffffff;
-        border: solid #333333;
+        background: #0f1419;
+        color: #e6edf3;
+        border: solid #2a3441;
     }
     Select:focus {
-        border: solid #ffffff;
+        border: solid #2f6feb;
     }
     #gen-buttons {
         margin-top: 1;
@@ -147,22 +147,22 @@ class GenerateModal(ModalScreen[Optional[Tuple[str, str, str]]]):
     }
     Button {
         margin-left: 2;
-        background: #181818;
-        color: #ffffff;
-        border: solid #3a3a3a;
+        background: #1d2530;
+        color: #e6edf3;
+        border: solid #2a3441;
     }
     Button:hover {
-        background: #2a2a2a;
-        border: solid #ffffff;
+        background: #2a3441;
+        border: solid #3e4c5e;
     }
     #btn-generate {
-        background: #ffffff;
-        color: #0a0a0a;
+        background: #2f6feb;
+        color: #ffffff;
         text-style: bold;
-        border: solid #ffffff;
+        border: solid #3d7bf5;
     }
     #btn-generate:hover {
-        background: #dcdcdc;
+        background: #3d7bf5;
     }
     """
 
@@ -231,44 +231,44 @@ class LabEngineApp(App):
     CSS = """
     Screen {
         layout: vertical;
-        background: #0a0a0a;
-        color: #f5f5f5;
+        background: #0f1419;
+        color: #e6edf3;
     }
     Header {
-        background: #121212;
-        color: #ffffff;
+        background: #161c24;
+        color: #e6edf3;
         dock: top;
         height: 1;
     }
     Footer {
-        background: #121212;
-        color: #a0a0a0;
+        background: #161c24;
+        color: #9ba7b4;
         dock: bottom;
         height: 1;
     }
     #main-container {
         layout: horizontal;
         height: 1fr;
-        background: #0a0a0a;
+        background: #0f1419;
     }
     #left-pane {
         width: 36%;
         height: 100%;
-        border-right: solid #2a2a2a;
-        background: #0a0a0a;
+        border-right: solid #2a3441;
+        background: #0f1419;
     }
     #right-pane {
         width: 64%;
         height: 100%;
         layout: vertical;
-        background: #0a0a0a;
+        background: #0f1419;
     }
     #lab-header-banner {
         height: auto;
         padding: 1 2;
-        background: #121212;
-        border-bottom: solid #2a2a2a;
-        color: #ffffff;
+        background: #161c24;
+        border-bottom: solid #2a3441;
+        color: #e6edf3;
     }
     #action-bar {
         height: auto;
@@ -278,96 +278,114 @@ class LabEngineApp(App):
     }
     #action-bar Button {
         margin-right: 1;
-        background: #181818;
-        color: #e5e5e5;
-        border: solid #3a3a3a;
+        background: #1d2530;
+        color: #e6edf3;
+        border: solid #2a3441;
         min-width: 14;
     }
     #action-bar Button:hover {
-        background: #2a2a2a;
-        border: solid #ffffff;
+        background: #2a3441;
+        border: solid #3e4c5e;
         color: #ffffff;
     }
     #btn-action-start {
-        background: #ffffff;
-        color: #0a0a0a;
+        background: #2f6feb;
+        color: #ffffff;
         text-style: bold;
-        border: solid #ffffff;
+        border: solid #3d7bf5;
     }
     #btn-action-start:hover {
-        background: #dcdcdc;
-        color: #0a0a0a;
+        background: #3d7bf5;
+        color: #ffffff;
     }
     #job-status-strip {
         padding: 0 2;
         margin-top: 1;
         margin-bottom: 1;
-        color: #a0a0a0;
+        color: #9ba7b4;
         text-style: bold;
         height: 1;
-        background: #121212;
+        background: #161c24;
+        border-bottom: solid #2a3441;
     }
     DataTable {
         height: 100%;
-        background: #0a0a0a;
-        color: #f5f5f5;
+        background: #0f1419;
+        color: #e6edf3;
         border: none;
     }
     DataTable > .datatable--cursor {
-        background: #ffffff;
-        color: #0a0a0a;
+        background: #2f6feb;
+        color: #ffffff;
         text-style: bold;
     }
     DataTable > .datatable--header {
-        background: #181818;
-        color: #ffffff;
+        background: #161c24;
+        color: #e6edf3;
         text-style: bold;
     }
     #tabbed-content {
         height: 1fr;
-        background: #0a0a0a;
+        background: #0f1419;
     }
     TabbedContent ContentSwitcher {
-        background: #0a0a0a;
+        background: #0f1419;
     }
     TabPane {
-        background: #0a0a0a;
+        background: #0f1419;
         padding: 0;
     }
     Tabs {
-        background: #121212;
-        color: #a0a0a0;
+        background: #161c24;
+        color: #9ba7b4;
     }
     Tab.-active {
         color: #ffffff;
         text-style: bold;
-        background: #181818;
+        background: #1d2530;
+        border-bottom: tall #2f6feb;
     }
-    #work-order-scroll {
+    #brief-scroll {
         height: 100%;
         padding: 1 2;
-        background: #0a0a0a;
+        background: #0f1419;
+    }
+    #lab-meta-box {
+        height: auto;
+        margin-bottom: 1;
+        padding: 1;
+        border: solid #2a3441;
+        background: #161c24;
+        color: #e6edf3;
+    }
+    #acceptance-criteria-box {
+        height: auto;
+        margin-bottom: 1;
+        padding: 1;
+        border: solid #2a3441;
+        background: #161c24;
+        color: #e6edf3;
     }
     #work-order-markdown {
         height: auto;
-        color: #f5f5f5;
-        background: #0a0a0a;
+        color: #e6edf3;
+        background: #0f1419;
     }
     #verify-scroll {
         height: 100%;
         padding: 1 2;
-        background: #0a0a0a;
+        background: #0f1419;
     }
     #verify-content {
         height: auto;
-        color: #f5f5f5;
-        background: #0a0a0a;
+        color: #e6edf3;
+        background: #0f1419;
     }
     RichLog {
         height: 100%;
         border: none;
-        background: #0a0a0a;
-        color: #dcdcdc;
+        background: #0f1419;
+        color: #e6edf3;
         padding: 1 2;
     }
     """
@@ -398,7 +416,9 @@ class LabEngineApp(App):
                 yield Static("STATUS: IDLE", id="job-status-strip")
                 with TabbedContent(initial="tab-brief", id="tabbed-content"):
                     with TabPane("Work Order", id="tab-brief"):
-                        with VerticalScroll(id="work-order-scroll"):
+                        with VerticalScroll(id="brief-scroll"):
+                            yield Static(id="lab-meta-box")
+                            yield Static(id="acceptance-criteria-box")
                             yield Markdown(id="work-order-markdown")
                     with TabPane("Acceptance Criteria & Verification", id="tab-verify"):
                         with VerticalScroll(id="verify-scroll"):
@@ -407,10 +427,10 @@ class LabEngineApp(App):
                         yield RichLog(id="log-view", auto_scroll=True, wrap=True, markup=False)
         yield Footer()
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         table = self.query_one("#labs-table", DataTable)
         table.add_columns("ID", "Title", "Base", "Status")
-        self.refresh_labs()
+        await self.refresh_labs()
 
     def set_job_status(self, status: str) -> None:
         """Update visible status strip."""
@@ -443,25 +463,25 @@ class LabEngineApp(App):
             except Exception:
                 pass
 
-    def format_badge(self, status: LabRuntimeStatus, record: Optional[LabStateRecord]) -> str:
-        """Format uniform monochrome text badge for table view and banner."""
+    def format_badge(self, status: LabRuntimeStatus, record: Optional[LabStateRecord], rich: bool = False) -> str:
+        """Format uniform corporate badge for table view and banner."""
         if status == LabRuntimeStatus.NOT_PROVISIONED:
-            return "[NEW]"
+            return "[#9ba7b4][NEW][/#9ba7b4]" if rich else "[NEW]"
         elif status == LabRuntimeStatus.RUNNING:
-            return "[RUNNING]"
+            return "[bold #2ea043][RUNNING][/bold #2ea043]" if rich else "[RUNNING]"
         elif status == LabRuntimeStatus.STOPPED:
-            return "[STOPPED]"
+            return "[#9ba7b4][STOPPED][/#9ba7b4]" if rich else "[STOPPED]"
         elif status == LabRuntimeStatus.PASSED:
             p = record.score_passed if record else 0
             t = record.score_total if record else 0
-            return f"[PASS {p}/{t}]"
+            return f"[bold #2ea043][PASS {p}/{t}][/bold #2ea043]" if rich else f"[PASS {p}/{t}]"
         elif status == LabRuntimeStatus.FAILED:
             p = record.score_passed if record else 0
             t = record.score_total if record else 0
-            return f"[FAIL {p}/{t}]"
+            return f"[bold #f85149][FAIL {p}/{t}][/bold #f85149]" if rich else f"[FAIL {p}/{t}]"
         return f"[{status.value.upper()}]"
 
-    def refresh_labs(self) -> None:
+    async def refresh_labs(self) -> None:
         """Reload labs from disk and populate table, preserving current selection."""
         current_id = self.selected_manifest.id if self.selected_manifest else None
         self.labs = self.engine.discover_labs()
@@ -487,7 +507,11 @@ class LabEngineApp(App):
             self.selected_manifest, self.selected_path = self.labs[target_row]
             if table.row_count > 0:
                 table.move_cursor(row=target_row)
-            self.run_worker(self.update_details_view())
+            await self.update_details_view()
+
+    def action_refresh(self) -> None:
+        """Trigger async refresh from a worker thread."""
+        self.run_worker(self.refresh_labs())
 
     async def select_lab_by_id(self, lab_id: str) -> None:
         """Select a lab by ID and update views asynchronously."""
@@ -528,15 +552,15 @@ class LabEngineApp(App):
         """Update top metadata banner of selected lab."""
         banner = self.query_one("#lab-header-banner", Static)
         if not self.selected_manifest:
-            banner.update("[dim]NO LAB SELECTED[/dim]")
+            banner.update("[#6e7b8b]NO LAB SELECTED[/#6e7b8b]")
             return
         m = self.selected_manifest
         status, record = self.engine.get_lab_status(m)
-        badge = self.format_badge(status, record)
+        badge = self.format_badge(status, record, rich=True)
         banner.update(
-            f"[bold white]{m.id.upper()}[/bold white]  |  [bold white]{m.title}[/bold white]  |  [bold white]{badge}[/bold white]\n"
-            f"[dim]DISTRO:[/dim] {m.distro_name}  |  [dim]BASE:[/dim] {m.base_image}  |  "
-            f"[dim]DIFFICULTY:[/dim] {m.difficulty.upper()}  |  [dim]EST. TIME:[/dim] {m.estimated_minutes}m"
+            f"[bold #e6edf3]{m.id.upper()}[/bold #e6edf3]  |  [bold #e6edf3]{m.title}[/bold #e6edf3]  |  {badge}\n"
+            f"[#9ba7b4]DISTRO:[/#9ba7b4] [#e6edf3]{m.distro_name}[/#e6edf3]  |  [#9ba7b4]BASE:[/#9ba7b4] [#e6edf3]{m.base_image}[/#e6edf3]  |  "
+            f"[#9ba7b4]DIFFICULTY:[/#9ba7b4] [#e6edf3]{m.difficulty.upper()}[/#e6edf3]  |  [#9ba7b4]EST. TIME:[/#9ba7b4] [#e6edf3]{m.estimated_minutes}m[/#e6edf3]"
         )
 
     async def update_details_view(self) -> None:
@@ -544,50 +568,86 @@ class LabEngineApp(App):
         if not self.selected_manifest or not self.selected_path:
             return
 
+        m = self.selected_manifest
+        p = self.selected_path
+        status, record = self.engine.get_lab_status(m)
+
         # 1. Update Header Banner
         self.update_header_banner()
 
-        # 2. Update Work Order (Markdown inside VerticalScroll)
-        brief_file = self.selected_path / "BRIEF.md"
-        content = brief_file.read_text(encoding="utf-8") if brief_file.is_file() else "# No Brief Found"
-        markdown_widget = self.query_one("#work-order-markdown", Markdown)
-        await markdown_widget.update(content)
-
-        # 3. Update Acceptance Criteria & Verification tab
-        m = self.selected_manifest
-        status, record = self.engine.get_lab_status(m)
-        verify_widget = self.query_one("#verify-content", Static)
-
-        sections = []
-        sections.append("[bold white]ACCEPTANCE CRITERIA / OBJECTIVES (XK0-006):[/bold white]\n")
-        if m.objectives:
-            for idx, obj in enumerate(m.objectives, 1):
-                sections.append(f"  [{idx}] {obj}")
-        else:
-            sections.append("  [dim]No explicit objectives listed in manifest.[/dim]")
-        sections.append("")
-
-        sections.append("[bold white]VERIFICATION STATUS & CHECK BREAKDOWN:[/bold white]\n")
-        if record and record.last_verified:
-            badge = self.format_badge(record.status, record)
-            sections.append(f"  Status: {badge}")
-            sections.append(f"  Score:  {record.score_passed} / {record.score_total}")
-            sections.append(f"  Tested: {record.last_verified}\n")
-            if record.checks:
-                for chk in record.checks:
-                    sym = "[PASS]" if chk.passed else "[FAIL]"
-                    sections.append(f"  {sym} [{chk.id}]: {chk.description}")
-                    if chk.details:
-                        sections.append(f"         {chk.details}")
-                sections.append("")
-            sections.append("[dim]Press 'v' or click Verify [v] to re-run automated checks.[/dim]")
-        else:
-            sections.append(
-                f"  No verification run recorded yet for {m.id}.\n\n"
-                "  Press 'v' or click Verify [v] to execute non-destructive automated checks."
+        # 2. Update Lab Meta Box in Work Order Tab
+        try:
+            meta_box = self.query_one("#lab-meta-box", Static)
+            domains_str = ", ".join(m.xk0_006_domains) if m.xk0_006_domains else "General"
+            meta_box.update(
+                f"[bold #2f6feb]LAB METADATA[/bold #2f6feb]\n"
+                f"[bold #e6edf3]{m.id.upper()}: {m.title}[/bold #e6edf3]\n"
+                f"[#9ba7b4]Target Distro:[/#9ba7b4] [#e6edf3]{m.distro_name}[/#e6edf3]  |  "
+                f"[#9ba7b4]Base Image:[/#9ba7b4] [#e6edf3]{m.base_image}[/#e6edf3]  |  "
+                f"[#9ba7b4]Difficulty:[/#9ba7b4] [#e6edf3]{m.difficulty.upper()}[/#e6edf3]  |  "
+                f"[#9ba7b4]Domains:[/#9ba7b4] [#e6edf3]{domains_str}[/#e6edf3]  |  "
+                f"[#9ba7b4]Est. Time:[/#9ba7b4] [#e6edf3]{m.estimated_minutes}m[/#e6edf3]"
             )
+        except Exception:
+            pass
 
-        verify_widget.update("\n".join(sections))
+        # 3. Update Acceptance Criteria Box in Work Order Tab
+        try:
+            crit_box = self.query_one("#acceptance-criteria-box", Static)
+            lines = ["[bold #2f6feb]ACCEPTANCE CRITERIA & REQUIREMENTS (XK0-006):[/bold #2f6feb]"]
+            if m.objectives:
+                for idx, obj in enumerate(m.objectives, 1):
+                    lines.append(f"  [bold #2f6feb][{idx}][/bold #2f6feb] [#e6edf3]{obj}[/#e6edf3]")
+            else:
+                lines.append("  [#6e7b8b]No explicit objectives listed in manifest.[/#6e7b8b]")
+            crit_box.update("\n".join(lines))
+        except Exception:
+            pass
+
+        # 4. Update Work Order Markdown
+        try:
+            brief_file = p / "BRIEF.md"
+            content = brief_file.read_text(encoding="utf-8") if brief_file.is_file() else "# No Brief Found"
+            markdown_widget = self.query_one("#work-order-markdown", Markdown)
+            await markdown_widget.update(content)
+        except Exception:
+            pass
+
+        # 5. Update Acceptance Criteria & Verification Tab
+        try:
+            verify_widget = self.query_one("#verify-content", Static)
+            sections = []
+            sections.append("[bold #2f6feb]ACCEPTANCE CRITERIA / OBJECTIVES (XK0-006):[/bold #2f6feb]\n")
+            if m.objectives:
+                for idx, obj in enumerate(m.objectives, 1):
+                    sections.append(f"  [{idx}] {obj}")
+            else:
+                sections.append("  [#6e7b8b]No explicit objectives listed in manifest.[/#6e7b8b]")
+            sections.append("")
+
+            sections.append("[bold #2f6feb]VERIFICATION STATUS & CHECK BREAKDOWN:[/bold #2f6feb]\n")
+            if record and record.last_verified:
+                badge = self.format_badge(record.status, record, rich=True)
+                sections.append(f"  Status: {badge}")
+                sections.append(f"  Score:  [bold #e6edf3]{record.score_passed} / {record.score_total}[/bold #e6edf3]")
+                sections.append(f"  Tested: [#9ba7b4]{record.last_verified}[/#9ba7b4]\n")
+                if record.checks:
+                    for chk in record.checks:
+                        sym = "[bold #2ea043][PASS][/bold #2ea043]" if chk.passed else "[bold #f85149][FAIL][/bold #f85149]"
+                        sections.append(f"  {sym} [{chk.id}]: {chk.description}")
+                        if chk.details:
+                            sections.append(f"         [#6e7b8b]{chk.details}[/#6e7b8b]")
+                    sections.append("")
+                sections.append("[#9ba7b4]Press 'v' or click Verify [v] to re-run automated checks.[/#9ba7b4]")
+            else:
+                sections.append(
+                    f"  No verification run recorded yet for {m.id}.\n\n"
+                    "  Press 'v' or click Verify [v] to execute non-destructive automated checks."
+                )
+
+            verify_widget.update("\n".join(sections))
+        except Exception:
+            pass
 
     @work(thread=True)
     def action_start_selected(self) -> None:
@@ -616,7 +676,7 @@ class LabEngineApp(App):
             self.call_from_thread(self.log_message, f"[{m.id}] [ERR] Failed to start lab: {e}")
         finally:
             self.call_from_thread(self.set_job_status, "IDLE")
-        self.call_from_thread(self.refresh_labs)
+        self.call_from_thread(self.action_refresh)
 
     @work(thread=True)
     def action_verify_selected(self) -> None:
@@ -654,7 +714,7 @@ class LabEngineApp(App):
         finally:
             self.call_from_thread(self.set_job_status, "IDLE")
 
-        self.call_from_thread(self.refresh_labs)
+        self.call_from_thread(self.action_refresh)
 
     def action_reset_selected(self) -> None:
         """Prompt confirmation modal before resetting."""
@@ -688,7 +748,7 @@ class LabEngineApp(App):
             self.call_from_thread(self.log_message, f"[{m.id}] [ERR] Reset failed: {e}")
         finally:
             self.call_from_thread(self.set_job_status, "IDLE")
-        self.call_from_thread(self.refresh_labs)
+        self.call_from_thread(self.action_refresh)
 
     @work(thread=True)
     def action_stop_selected(self) -> None:
@@ -708,7 +768,7 @@ class LabEngineApp(App):
             self.call_from_thread(self.log_message, f"[{m.id}] [ERR] Stop failed: {e}")
         finally:
             self.call_from_thread(self.set_job_status, "IDLE")
-        self.call_from_thread(self.refresh_labs)
+        self.call_from_thread(self.action_refresh)
 
     def action_open_generate(self) -> None:
         """Open the AI lab generation modal."""
@@ -730,13 +790,22 @@ class LabEngineApp(App):
         )
         generator = AILabGenerator(self.config.ai)
         try:
-            payload = generator.generate_lab(domain=domain, topic=topic, base_image=base_image)
-            saved_dir = generator.save_generated_lab(payload, self.config.labs_dir)
+            payload = generator.generate_lab(
+                domain=domain,
+                topic=topic,
+                base_image=base_image,
+                progress_callback=lambda msg: self.call_from_thread(self.log_message, f"[AI] {msg}"),
+            )
+            saved_dir = generator.save_generated_lab(
+                payload,
+                self.config.labs_dir,
+                progress_callback=lambda msg: self.call_from_thread(self.log_message, f"[AI] {msg}"),
+            )
             self.call_from_thread(
                 self.log_message,
                 f"[AI] [OK] Successfully generated and saved lab to {saved_dir.name}."
             )
-            self.call_from_thread(self.refresh_labs)
+            self.call_from_thread(self.action_refresh)
         except Exception as e:
             self.call_from_thread(self.log_message, f"[AI] [ERR] Generation failed: {e}")
         finally:

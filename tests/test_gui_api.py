@@ -336,4 +336,173 @@ def test_entrypoint_inversion_dispatch(monkeypatch):
         assert mock_cli.called
 
 
+def test_ai_config_endpoints(client, tmp_path, monkeypatch):
+    """Verify GET and PUT /api/ai/config endpoints with masking and atomic saving."""
+    from lplab.config import AppConfig
+    from lplab.models import AIConfig
+
+    test_config_path = tmp_path / "config.yaml"
+    cfg = AppConfig(
+        labs_dir=tmp_path / "labs",
+        base_images_dir=tmp_path / "base-images",
+        distro_storage_dir=tmp_path / "distros",
+        state_file=tmp_path / "state.json",
+        config_file=test_config_path,
+        ai=AIConfig(
+            provider="custom",
+            base_url="http://localhost:11434/v1",
+            model="qwen2.5-coder:7b",
+            api_key="sk-secret-test-key-12345",
+        ),
+    )
+    app.state.config = cfg
+
+    # 1. GET /api/ai/config should mask the API key
+    resp = client.get("/api/ai/config")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["provider"] == "custom"
+    assert data["model"] == "qwen2.5-coder:7b"
+    assert data["has_api_key"] is True
+    # The key returned must be masked, not plain text
+    assert data["api_key_masked"] == "••••••••"
+    assert "secret" not in str(data)
+
+    # 2. PUT /api/ai/config updates and persists config
+    resp_update = client.put(
+        "/api/ai/config",
+        json={
+            "provider": "ollama",
+            "base_url": "http://127.0.0.1:11434/v1",
+            "model": "llama3.1:8b",
+            "temperature": 0.3,
+            "timeout_seconds": 90,
+            "api_key": "sk-new-super-secret-key-9999",
+        },
+    )
+    assert resp_update.status_code == 200
+    up_data = resp_update.json()
+    assert up_data["provider"] == "ollama"
+    assert up_data["model"] == "llama3.1:8b"
+    assert up_data["api_key_masked"] == "••••••••"
+    assert "super-secret" not in str(up_data)
+
+    # Verify atomic file write on disk
+    assert test_config_path.is_file()
+    saved_text = test_config_path.read_text(encoding="utf-8")
+    assert "ollama" in saved_text
+    assert "llama3.1:8b" in saved_text
+    assert "sk-new-super-secret-key-9999" in saved_text
+
+
+def test_ai_detect_and_models_endpoints(client):
+    """Verify /api/ai/detect and /api/ai/models return structured provider information."""
+    with patch("lplab.gui_server.detect_local_providers") as mock_detect:
+        mock_detect.return_value = [
+            {"provider": "ollama", "name": "Ollama", "base_url": "http://localhost:11434/v1", "available": True, "error": None},
+            {"provider": "lm_studio", "name": "LM Studio", "base_url": "http://localhost:1234/v1", "available": False, "error": "Connection refused"},
+        ]
+        resp = client.get("/api/ai/detect")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["detected"]) == 2
+        assert data["detected"][0]["available"] is True
+
+    with patch("lplab.gui_server.fetch_provider_models") as mock_fetch:
+        mock_fetch.return_value = (True, ["llama3:latest", "qwen2.5:7b"], "")
+        resp_models = client.post(
+            "/api/ai/models",
+            json={"base_url": "http://localhost:11434/v1", "api_key": ""}
+        )
+        assert resp_models.status_code == 200
+        models_data = resp_models.json()
+        assert models_data["models"] == ["llama3:latest", "qwen2.5:7b"]
+
+
+def test_zero_duplicate_labs_and_clean_sidebar(client):
+    """Verify all 9 labs are unique (no duplicate IDs or distro names), and sidebar is clean."""
+    resp = client.get("/api/labs")
+    assert resp.status_code == 200
+    labs = resp.json()
+    assert len(labs) == 9
+
+    # Strict uniqueness of IDs and distro names
+    ids = [lab["id"] for lab in labs]
+    distro_names = [lab["distro_name"] for lab in labs]
+    slugs = [lab["slug"] for lab in labs]
+
+    assert len(ids) == len(set(ids)), f"Duplicate lab IDs found: {ids}"
+    assert len(distro_names) == len(set(distro_names)), f"Duplicate distro names found: {distro_names}"
+    assert len(slugs) == len(set(slugs)), f"Duplicate slugs found: {slugs}"
+
+    # Verify index.html does not contain the old domain tag badges in the lab item cards
+    html = client.get("/").text
+    assert "lab-domain-badge" not in html
+    assert "card.dataset.id" in html
+    assert "card.dataset.slug" in html
+
+
+def test_engine_discover_labs_deduplication(tmp_path):
+    """Verify LabEngine.discover_labs skips and warns on duplicate manifest IDs."""
+    from lplab.config import AppConfig
+    from lplab.lab_engine import LabEngine
+
+    labs_dir = tmp_path / "labs"
+    labs_dir.mkdir()
+
+    # Create first lab with id: lab-04
+    dir1 = labs_dir / "lab-04-primary"
+    dir1.mkdir()
+    (dir1 / "lab.yaml").write_text(
+        """id: lab-04
+slug: lab-04-primary
+title: Lab 04 Primary
+distro_name: lplab-lab-04-primary
+base_image: ubuntu-24.04
+student_user: student
+difficulty: intermediate
+estimated_minutes: 20
+xk0_006_domains: [system_management]
+objectives: [obj1]
+""",
+        encoding="utf-8",
+    )
+    (dir1 / "BRIEF.md").write_text("# Primary Brief", encoding="utf-8")
+
+    # Create second lab with DUPLICATE id: lab-04
+    dir2 = labs_dir / "lab-04-duplicate"
+    dir2.mkdir()
+    (dir2 / "lab.yaml").write_text(
+        """id: lab-04
+slug: lab-04-duplicate
+title: Lab 04 Duplicate
+distro_name: lplab-lab-04-dup
+base_image: ubuntu-24.04
+student_user: student
+difficulty: intermediate
+estimated_minutes: 20
+xk0_006_domains: [system_management]
+objectives: [obj1]
+""",
+        encoding="utf-8",
+    )
+    (dir2 / "BRIEF.md").write_text("# Duplicate Brief", encoding="utf-8")
+
+    cfg = AppConfig(
+        labs_dir=labs_dir,
+        base_images_dir=tmp_path / "base-images",
+        distro_storage_dir=tmp_path / "distros",
+        state_file=tmp_path / "state.json",
+        config_file=tmp_path / "config.yaml",
+    )
+    engine = LabEngine(cfg)
+    discovered = engine.discover_labs()
+
+    # Must only contain one manifest for lab-04
+    assert len(discovered) == 1
+    assert discovered[0][0].id == "lab-04"
+    assert discovered[0][0].slug in ("lab-04-primary", "lab-04-duplicate")
+
+
+
 

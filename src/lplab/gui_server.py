@@ -4,17 +4,22 @@ import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime
 import json
+import os
 from pathlib import Path
 import threading
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Literal, Optional, Set
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
-from lplab.ai_generator import AILabGenerator
-from lplab.config import AppConfig, load_config
+from lplab.ai_generator import (
+    AILabGenerator,
+    detect_local_providers,
+    fetch_provider_models,
+)
+from lplab.config import AppConfig, load_config, save_config
 from lplab.lab_engine import LabEngine
-from lplab.models import CheckResult, LabRuntimeStatus, VerifyReport
+from lplab.models import AIConfig, CheckResult, LabRuntimeStatus, VerifyReport
 from lplab.paths import get_static_index_path
 from lplab.rootfs_builder import build_rootfs_tar
 
@@ -69,6 +74,25 @@ class EventBroker:
             self._subscribers.discard(q)
 
 
+class AIConfigUpdateRequest(BaseModel):
+    """Payload for updating AI provider configuration."""
+    provider: Optional[Literal["ollama", "open_webui", "openrouter", "custom"]] = None
+    base_url: Optional[str] = None
+    model: Optional[str] = None
+    api_key: Optional[str] = None
+    api_key_env: Optional[str] = None
+    clear_api_key: bool = False
+    temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
+    timeout_seconds: Optional[int] = Field(default=None, ge=10, le=600)
+
+
+class AIModelsRequest(BaseModel):
+    """Payload for testing connection and querying live available models."""
+    provider: str = Field(default="ollama")
+    base_url: str = Field(default="http://localhost:11434/v1")
+    api_key: Optional[str] = None
+
+
 class GenerateRequest(BaseModel):
     """Payload for generating a new AI lab."""
     domain: str = Field(default="system_management", description="CompTIA Linux+ XK0-006 domain")
@@ -106,7 +130,7 @@ def create_app(config: Optional[AppConfig] = None, engine: Optional[LabEngine] =
     app = FastAPI(
         title="lplab-gui-server",
         description="Local desktop API backend for lplab CompTIA Linux+ Lab Engine",
-        version="0.2.0",
+        version="0.3.0",
         lifespan=lifespan,
     )
 
@@ -301,6 +325,79 @@ def create_app(config: Optional[AppConfig] = None, engine: Optional[LabEngine] =
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
+    def _mask_ai_config(ai_cfg: AIConfig) -> Dict[str, Any]:
+        has_key = bool(ai_cfg.api_key and ai_cfg.api_key.strip())
+        return {
+            "provider": ai_cfg.provider,
+            "base_url": ai_cfg.base_url,
+            "model": ai_cfg.model,
+            "has_api_key": has_key,
+            "api_key_masked": "••••••••" if has_key else "",
+            "api_key_env": ai_cfg.api_key_env,
+            "temperature": ai_cfg.temperature,
+            "timeout_seconds": ai_cfg.timeout_seconds,
+        }
+
+    @app.get("/api/ai/config")
+    async def get_ai_config():
+        """Return active AI provider and model configuration with masked API key."""
+        cfg: AppConfig = app.state.config
+        return _mask_ai_config(cfg.ai)
+
+    @app.put("/api/ai/config")
+    async def update_ai_config(req: AIConfigUpdateRequest):
+        """Update and persist AI configuration, hot-reloading server state."""
+        cfg: AppConfig = app.state.config
+        ai_cfg = cfg.ai
+
+        if req.provider is not None:
+            ai_cfg.provider = req.provider
+        if req.base_url is not None and req.base_url.strip():
+            ai_cfg.base_url = req.base_url.strip()
+        if req.model is not None and req.model.strip():
+            ai_cfg.model = req.model.strip()
+        if req.clear_api_key:
+            ai_cfg.api_key = None
+        elif req.api_key is not None and req.api_key.strip():
+            ai_cfg.api_key = req.api_key.strip()
+        if req.api_key_env is not None:
+            ai_cfg.api_key_env = req.api_key_env.strip() or None
+        if req.temperature is not None:
+            ai_cfg.temperature = req.temperature
+        if req.timeout_seconds is not None:
+            ai_cfg.timeout_seconds = req.timeout_seconds
+
+        save_config(cfg)
+        broker.log(f"AI configuration updated: {ai_cfg.provider} / {ai_cfg.model}", level="info")
+        broker.publish({"type": "ai_config_updated", "config": _mask_ai_config(ai_cfg)})
+        return _mask_ai_config(ai_cfg)
+
+    @app.get("/api/ai/detect")
+    async def detect_ai():
+        """Probe localhost for running Ollama, Open WebUI, and local LLM endpoints."""
+        detected = await asyncio.to_thread(detect_local_providers)
+        return {"detected": detected}
+
+    @app.post("/api/ai/models")
+    async def query_ai_models(req: AIModelsRequest):
+        """Query provider endpoint for list of available models."""
+        cfg: AppConfig = app.state.config
+        key = req.api_key
+        if not key or not key.strip():
+            # Fall back to saved key or env var if blank
+            if cfg.ai.api_key_env:
+                key = os.environ.get(cfg.ai.api_key_env)
+            if not key:
+                key = cfg.ai.api_key
+
+        ok, models, msg = await asyncio.to_thread(
+            fetch_provider_models,
+            req.provider,
+            req.base_url,
+            key,
+        )
+        return {"ok": ok, "models": models, "message": msg}
+
     @app.post("/api/generate")
     async def generate_lab(req: GenerateRequest):
         """Generate a new AI lab scenario with safety linting and save it."""
@@ -315,8 +412,13 @@ def create_app(config: Optional[AppConfig] = None, engine: Optional[LabEngine] =
                     domain=req.domain,
                     topic=req.topic,
                     base_image=req.base_image,
+                    progress_callback=lambda msg: broker.log(f"[AI] {msg}"),
                 )
-                saved_dir = generator.save_generated_lab(payload, cfg.labs_dir)
+                saved_dir = generator.save_generated_lab(
+                    payload,
+                    cfg.labs_dir,
+                    progress_callback=lambda msg: broker.log(f"[AI] {msg}"),
+                )
                 broker.log(f"Generated lab saved to {saved_dir.name}", level="success")
                 broker.publish({"type": "refresh_labs"})
                 return payload, saved_dir

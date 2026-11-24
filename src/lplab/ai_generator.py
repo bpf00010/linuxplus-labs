@@ -1,12 +1,13 @@
 """AI lab scenario generator and static safety linter."""
 
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 import httpx
 import yaml
 
@@ -208,30 +209,254 @@ You must respond with ONLY valid JSON matching this schema:
 """
 
 
+def strip_think_blocks(text: str) -> str:
+    """Remove <think>...</think> reasoning blocks emitted by thinking/reasoning models."""
+    cleaned = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE)
+    cleaned = re.sub(r"<think>[\s\S]*?(?=(?:```|\{|$))", "", cleaned, flags=re.IGNORECASE)
+    return cleaned.strip()
+
+
 def extract_json_from_response(text: str) -> dict:
-    """Extract valid JSON from LLM markdown code blocks or raw text."""
-    text = text.strip()
+    """Extract valid JSON from LLM markdown code blocks or raw text, stripping think blocks."""
+    clean_text = strip_think_blocks(text)
     # Try direct parse
     try:
-        return json.loads(text)
+        return json.loads(clean_text)
     except Exception:
         pass
 
     # Try extracting markdown ```json ... ```
-    m = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
+    m = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", clean_text)
     if m:
         try:
-            return json.loads(m.group(1))
+            return json.loads(m.group(1).strip())
         except Exception:
             pass
 
     # Search between outermost curly brackets
-    start = text.find("{")
-    end = text.rfind("}")
-    if start != -1 and end != -1:
-        return json.loads(text[start : end + 1])
+    start = clean_text.find("{")
+    end = clean_text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        try:
+            return json.loads(clean_text[start : end + 1])
+        except Exception:
+            pass
 
-    raise ValueError(f"Could not parse valid JSON from AI response: {text[:200]}...")
+    raise ValueError(f"Could not parse valid JSON from AI response: {clean_text[:200]}...")
+
+
+def normalize_chat_completion_url(base_url: str, provider: str = "custom") -> str:
+    """Normalize base URL to /chat/completions endpoint based on provider preset."""
+    if provider == "openrouter":
+        return "https://openrouter.ai/api/v1/chat/completions"
+
+    url = (base_url or "").strip().rstrip("/")
+    if not url:
+        url = "http://localhost:11434/v1"
+
+    if provider == "ollama" and ":11434" in url and not url.endswith("/v1"):
+        url = f"{url}/v1"
+    elif provider == "open_webui":
+        if not url.endswith("/api") and not url.endswith("/v1"):
+            url = f"{url}/api"
+
+    if url.endswith("/chat/completions"):
+        return url
+    if url.endswith("/v1"):
+        return f"{url}/chat/completions"
+    if url.endswith("/api"):
+        return f"{url}/v1/chat/completions"
+    return f"{url}/chat/completions"
+
+
+def detect_local_providers() -> List[Dict[str, Any]]:
+    """Fast local provider auto-discovery with 1.5s timeout per probe."""
+    detected: List[Dict[str, Any]] = []
+
+    # 1. Ollama probe
+    try:
+        with httpx.Client(timeout=1.5) as client:
+            r = client.get("http://localhost:11434/api/tags")
+            if r.status_code == 200:
+                data = r.json()
+                models = [m["name"] for m in data.get("models", []) if isinstance(m, dict) and "name" in m]
+                detected.append({
+                    "provider": "ollama",
+                    "name": "Ollama (Local)",
+                    "base_url": "http://localhost:11434/v1",
+                    "models": models,
+                    "status": "ready",
+                    "recommended_model": models[0] if models else "llama3",
+                })
+    except Exception:
+        pass
+
+    # 2. Open WebUI probe (ports 8080 and 3000)
+    for port in (8080, 3000):
+        try:
+            with httpx.Client(timeout=1.5) as client:
+                r = client.get(f"http://localhost:{port}/api/config")
+                if r.status_code == 200:
+                    owui_models: List[str] = []
+                    try:
+                        rm = client.get(f"http://localhost:{port}/api/models", timeout=1.5)
+                        if rm.status_code == 200:
+                            mdata = rm.json()
+                            if isinstance(mdata, list):
+                                owui_models = [m.get("id") or m.get("name") for m in mdata if isinstance(m, dict)]
+                            elif isinstance(mdata, dict) and "data" in mdata:
+                                owui_models = [m.get("id") for m in mdata.get("data", []) if isinstance(m, dict)]
+                    except Exception:
+                        pass
+                    detected.append({
+                        "provider": "open_webui",
+                        "name": f"Open WebUI (port {port})",
+                        "base_url": f"http://localhost:{port}/api",
+                        "models": [m for m in owui_models if m],
+                        "status": "ready",
+                        "recommended_model": owui_models[0] if owui_models else "",
+                    })
+                    break
+        except Exception:
+            pass
+
+    # 3. LM Studio on port 1234
+    try:
+        with httpx.Client(timeout=1.5) as client:
+            r = client.get("http://localhost:1234/v1/models")
+            if r.status_code == 200:
+                data = r.json()
+                models = [m["id"] for m in data.get("data", []) if isinstance(m, dict) and "id" in m]
+                detected.append({
+                    "provider": "custom",
+                    "name": "LM Studio (port 1234)",
+                    "base_url": "http://localhost:1234/v1",
+                    "models": models,
+                    "status": "ready",
+                    "recommended_model": models[0] if models else "",
+                })
+    except Exception:
+        pass
+
+    return detected
+
+
+def fetch_provider_models(
+    provider: str,
+    base_url: str,
+    api_key: Optional[str] = None,
+) -> Tuple[bool, List[str], str]:
+    """Test connectivity and query live available models from provider."""
+    headers: Dict[str, str] = {}
+    if api_key and api_key.strip():
+        headers["Authorization"] = f"Bearer {api_key.strip()}"
+
+    url = (base_url or "").strip().rstrip("/")
+
+    try:
+        with httpx.Client(timeout=10.0) as client:
+            if provider == "openrouter":
+                headers["HTTP-Referer"] = "https://github.com/bpf00010/linuxplus-labs"
+                headers["X-Title"] = "lplab"
+                r = client.get("https://openrouter.ai/api/v1/models", headers=headers)
+                r.raise_for_status()
+                data = r.json()
+                models = [m["id"] for m in data.get("data", []) if isinstance(m, dict) and "id" in m]
+                return True, sorted(models), f"Discovered {len(models)} models from OpenRouter"
+
+            elif provider == "ollama":
+                host = url.replace("/v1", "")
+                try:
+                    r = client.get(f"{host}/api/tags", headers=headers, timeout=5.0)
+                    if r.status_code == 200:
+                        data = r.json()
+                        models = [m["name"] for m in data.get("models", []) if isinstance(m, dict) and "name" in m]
+                        return True, models, f"Discovered {len(models)} models from Ollama"
+                except Exception:
+                    pass
+                models_url = f"{url}/models" if not url.endswith("/models") else url
+                r = client.get(models_url, headers=headers, timeout=5.0)
+                r.raise_for_status()
+                data = r.json()
+                models = [m["id"] for m in data.get("data", []) if isinstance(m, dict) and "id" in m]
+                return True, models, f"Discovered {len(models)} models from Ollama"
+
+            elif provider == "open_webui":
+                candidates = [
+                    f"{url}/models",
+                    f"{url}/v1/models",
+                    f"{url}/api/models",
+                ]
+                for cand in candidates:
+                    try:
+                        r = client.get(cand, headers=headers, timeout=5.0)
+                        if r.status_code == 200:
+                            data = r.json()
+                            models = []
+                            if isinstance(data, list):
+                                models = [m.get("id") or m.get("name") for m in data if isinstance(m, dict)]
+                            elif isinstance(data, dict):
+                                items = data.get("data", []) or data.get("models", [])
+                                models = [m.get("id") or m.get("name") for m in items if isinstance(m, dict)]
+                            models = [m for m in models if m]
+                            return True, models, f"Discovered {len(models)} models from Open WebUI"
+                    except Exception:
+                        pass
+                return False, [], "Could not fetch models from Open WebUI (check Base URL and API key)"
+
+            else:  # custom
+                models_url = f"{url}/models" if not url.endswith("/models") else url
+                r = client.get(models_url, headers=headers, timeout=5.0)
+                r.raise_for_status()
+                data = r.json()
+                models = [m["id"] for m in data.get("data", []) if isinstance(m, dict) and "id" in m]
+                return True, models, f"Discovered {len(models)} models"
+
+    except Exception as e:
+        return False, [], f"Connection error: {e}"
+
+
+def assign_next_lab_id_and_distro(payload: GeneratedLabPayload, labs_dir: Path) -> GeneratedLabPayload:
+    """Ensure generated lab has a guaranteed unique, non-colliding numeric ID and distro_name."""
+    existing_nums: set[int] = set()
+    if labs_dir.is_dir():
+        for item in labs_dir.iterdir():
+            m_sub = re.match(r"^lab-(\d+)", item.name)
+            if m_sub:
+                existing_nums.add(int(m_sub.group(1)))
+            yaml_file = item / "lab.yaml"
+            if yaml_file.is_file():
+                try:
+                    with open(yaml_file, "r", encoding="utf-8") as f:
+                        yd = yaml.safe_load(f)
+                    if isinstance(yd, dict) and "id" in yd:
+                        m_id = re.match(r"^lab-(\d+)", str(yd["id"]))
+                        if m_id:
+                            existing_nums.add(int(m_id.group(1)))
+                except Exception:
+                    pass
+
+    next_num = max(existing_nums, default=0) + 1
+    new_id = f"lab-{next_num:02d}"
+    old_id = payload.manifest.id
+
+    title_slug = re.sub(r"[^a-z0-9]+", "-", payload.manifest.title.lower()).strip("-")
+    if not title_slug:
+        title_slug = "scenario"
+    title_slug = title_slug[:30].strip("-")
+
+    new_slug = f"{new_id}-{title_slug}"
+    new_distro = f"lplab-{next_num:02d}"
+
+    payload.manifest.id = new_id
+    payload.manifest.slug = new_slug
+    payload.manifest.distro_name = new_distro
+
+    if old_id and old_id != new_id:
+        payload.verify_sh = payload.verify_sh.replace(f'"{old_id}"', f'"{new_id}"')
+        payload.verify_sh = payload.verify_sh.replace(f"'{old_id}'", f"'{new_id}'")
+
+    return payload
 
 
 class AILabGenerator:
@@ -240,14 +465,27 @@ class AILabGenerator:
     def __init__(self, ai_config: AIConfig):
         self.config = ai_config
 
+    def _resolve_api_key(self) -> str:
+        """Resolve API key using api_key_env if set, falling back to api_key."""
+        if self.config.api_key_env:
+            env_val = os.environ.get(self.config.api_key_env)
+            if env_val and env_val.strip():
+                return env_val.strip()
+        return self.config.api_key or "ollama"
+
     def generate_lab(
         self,
         domain: str,
         topic: str,
         base_image: str = "rockylinux-9",
         max_retries: int = 2,
+        progress_callback: Optional[Callable[[str], None]] = None,
     ) -> GeneratedLabPayload:
         """Generate a complete lab scenario with automatic linting and repair retries."""
+        def log(msg: str) -> None:
+            if progress_callback:
+                progress_callback(msg)
+
         user_prompt = (
             f"Generate a CompTIA Linux+ XK0-006 lab scenario.\n"
             f"Domain: {domain}\n"
@@ -265,31 +503,40 @@ class AILabGenerator:
         attempt = 0
         last_errors: List[str] = []
 
-        headers = {
-            "Authorization": f"Bearer {self.config.api_key}",
+        api_key = self._resolve_api_key()
+        headers: Dict[str, str] = {
             "Content-Type": "application/json",
         }
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        if self.config.provider == "openrouter":
+            headers["HTTP-Referer"] = "https://github.com/bpf00010/linuxplus-labs"
+            headers["X-Title"] = "lplab"
+
+        url = normalize_chat_completion_url(self.config.base_url, self.config.provider)
+        timeout = float(self.config.timeout_seconds)
 
         while attempt <= max_retries:
             attempt += 1
             if last_errors:
-                # Add correction feedback
+                log(f"Auto-repair attempt {attempt - 1}/{max_retries}...")
                 feedback = (
                     "Your previous generation had the following linting/compliance errors:\n"
                     + "\n".join(f"- {e}" for e in last_errors)
                     + "\nPlease fix all of these issues and return the corrected JSON object."
                 )
                 messages.append({"role": "user", "content": feedback})
+            else:
+                log(f"Connecting to {self.config.provider} ({self.config.model})...")
 
-            url = f"{self.config.base_url.rstrip('/')}/chat/completions"
             payload = {
                 "model": self.config.model,
                 "messages": messages,
-                "temperature": 0.4,
+                "temperature": float(self.config.temperature),
             }
 
             try:
-                with httpx.Client(timeout=120.0) as client:
+                with httpx.Client(timeout=timeout) as client:
                     resp = client.post(url, json=payload, headers=headers)
                     resp.raise_for_status()
                     data = resp.json()
@@ -298,7 +545,7 @@ class AILabGenerator:
             except Exception as e:
                 raise RuntimeError(f"AI API request failed: {e}")
 
-            # Parse and validate schema
+            log("Parsing lab payload...")
             try:
                 parsed_json = extract_json_from_response(content)
                 payload_obj = GeneratedLabPayload.model_validate(parsed_json)
@@ -306,7 +553,7 @@ class AILabGenerator:
                 last_errors = [f"JSON schema validation failed: {e}"]
                 continue
 
-            # Run safety linter
+            log("Running static safety linter & bash -n...")
             lint_errors = SafetyLinter.lint_payload(payload_obj)
             if not lint_errors:
                 return payload_obj
@@ -318,8 +565,20 @@ class AILabGenerator:
             f"Last errors: {last_errors}"
         )
 
-    def save_generated_lab(self, payload: GeneratedLabPayload, labs_dir: Path) -> Path:
-        """Persist generated lab files to labs/<slug>/."""
+    def save_generated_lab(
+        self,
+        payload: GeneratedLabPayload,
+        labs_dir: Path,
+        progress_callback: Optional[Callable[[str], None]] = None,
+    ) -> Path:
+        """Persist generated lab files to labs/<slug>/ with non-colliding numbering."""
+        def log(msg: str) -> None:
+            if progress_callback:
+                progress_callback(msg)
+
+        log("Assigning non-colliding ID and distro name...")
+        payload = assign_next_lab_id_and_distro(payload, labs_dir)
+
         lab_dir = labs_dir / payload.manifest.slug
         lab_dir.mkdir(parents=True, exist_ok=True)
 
@@ -347,4 +606,5 @@ class AILabGenerator:
         except Exception:
             pass
 
+        log(f"Saved to {lab_dir.name} (distro: {payload.manifest.distro_name})")
         return lab_dir

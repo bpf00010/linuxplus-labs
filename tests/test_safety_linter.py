@@ -3,7 +3,12 @@
 from pathlib import Path
 import pytest
 
-from lplab.ai_generator import SafetyLinter
+from lplab.ai_generator import (
+    SafetyLinter,
+    assign_next_lab_id_and_distro,
+    extract_json_from_response,
+    strip_think_blocks,
+)
 from lplab.models import GeneratedLabPayload, LabManifest
 
 
@@ -98,3 +103,105 @@ def test_seed_labs_pass_linter():
 
         syntax_err_verify = SafetyLinter.check_bash_syntax(verify_sh)
         assert syntax_err_verify is None, f"{lab_slug}/verify.sh syntax error: {syntax_err_verify}"
+
+
+def test_strip_think_blocks():
+    """Verify strip_think_blocks removes thinking blocks across various formats."""
+    # 1. Closed thinking block
+    raw = "<think>\nThinking about how to design this lab...\n</think>\n```json\n{\"id\": \"lab-01\"}\n```"
+    stripped = strip_think_blocks(raw)
+    assert "<think>" not in stripped
+    assert "Thinking about" not in stripped
+    assert "```json" in stripped
+
+    # 2. Case insensitive thinking block
+    raw2 = "<THINK>internal reasoning</THINK>content"
+    assert strip_think_blocks(raw2).strip() == "content"
+
+    # 3. Unclosed thinking block at beginning
+    raw3 = "<think>Still reasoning when context cut off\n\n```json\n{\"foo\": \"bar\"}\n```"
+    # Unclosed think should truncate up to end or match correctly
+    assert "<think>" not in strip_think_blocks(raw3)
+
+    # 4. No think tags
+    raw4 = "Just regular text"
+    assert strip_think_blocks(raw4) == "Just regular text"
+
+
+def test_extract_json_from_response():
+    """Verify extract_json_from_response extracts payload even with think tags and markdown fences."""
+    # Fenced JSON with leading think block
+    resp = """<think>
+Let's structure the JSON output according to schema.
+</think>
+Here is the lab configuration:
+```json
+{
+  "manifest": {
+    "title": "Configuring Nginx Reverse Proxy"
+  },
+  "brief_md": "# Ticket: Setup Nginx",
+  "setup_sh": "#!/usr/bin/env bash\\necho ok",
+  "verify_sh": "#!/usr/bin/env bash\\necho ok"
+}
+```
+Hope this helps!"""
+    data = extract_json_from_response(resp)
+    assert isinstance(data, dict)
+    assert data["manifest"]["title"] == "Configuring Nginx Reverse Proxy"
+    assert data["brief_md"] == "# Ticket: Setup Nginx"
+
+    # Raw JSON with whitespace and think tags
+    resp_raw = """<think>done thinking</think>
+{"manifest": {"title": "Raw JSON"}, "brief_md": "ticket", "setup_sh": "echo 1", "verify_sh": "echo 1"}"""
+    data_raw = extract_json_from_response(resp_raw)
+    assert data_raw["manifest"]["title"] == "Raw JSON"
+
+
+def test_assign_next_lab_id_and_distro(tmp_path):
+    """Verify non-colliding lab numbering and verify.sh lab_id replacement."""
+    # Create fake existing labs lab-01 to lab-09 in tmp_path
+    for i in range(1, 10):
+        d = tmp_path / f"lab-0{i}-sample"
+        d.mkdir()
+        (d / "lab.yaml").write_text(f"id: lab-0{i}\nslug: lab-0{i}-sample\n", encoding="utf-8")
+
+    manifest = LabManifest(
+        id="lab-01",  # Colliding ID initially provided by LLM
+        slug="storage-repair",
+        title="Storage Repair",
+        distro_name="lplab-lab-01",  # Colliding distro_name
+        base_image="ubuntu-24.04",
+        student_user="student",
+        difficulty="intermediate",
+        estimated_minutes=25,
+        xk0_006_domains=["system_management"],
+        objectives=["Fix fstab"],
+    )
+
+    verify_sh = """#!/usr/bin/env bash
+cat << 'EOF'
+{
+  "lab_id": "lab-01",
+  "passed": true
+}
+EOF
+"""
+
+    payload = GeneratedLabPayload(
+        manifest=manifest,
+        brief_md="# Brief",
+        setup_sh="#!/bin/bash\necho setup",
+        verify_sh=verify_sh,
+    )
+
+    updated = assign_next_lab_id_and_distro(payload, labs_dir=tmp_path)
+
+    # Next available should be lab-10
+    assert updated.manifest.id == "lab-10"
+    assert updated.manifest.slug == "lab-10-storage-repair"
+    assert updated.manifest.distro_name == "lplab-10"
+    # verify.sh lab_id should be replaced
+    assert '"lab_id": "lab-10"' in updated.verify_sh
+    assert '"lab_id": "lab-01"' not in updated.verify_sh
+

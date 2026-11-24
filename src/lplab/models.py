@@ -97,9 +97,16 @@ class VerifyReport(BaseModel):
 
 class AIConfig(BaseModel):
     """AI Generator connection settings."""
+    provider: Literal["ollama", "open_webui", "openrouter", "custom"] = Field(
+        default="ollama",
+        description="AI provider preset"
+    )
     base_url: str = Field(default="http://localhost:11434/v1", description="OpenAI-compatible API base URL")
-    api_key: str = Field(default="ollama", description="API key (defaults to ollama)")
     model: str = Field(default="llama3", description="Model name")
+    api_key: Optional[str] = Field(default="ollama", description="API key (defaults to ollama)")
+    api_key_env: Optional[str] = Field(default=None, description="Optional environment variable name for API key")
+    temperature: float = Field(default=0.2, ge=0.0, le=2.0, description="Sampling temperature")
+    timeout_seconds: int = Field(default=180, ge=10, le=600, description="Request timeout in seconds")
 
 
 class AppConfig(BaseModel):
