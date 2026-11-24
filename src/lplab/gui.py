@@ -29,18 +29,18 @@ def get_gui_log_path() -> Path:
     return base_dir / "gui.log"
 
 
-def setup_safe_stdio() -> Path:
+def setup_safe_stdio(force_redirect: bool = False) -> Path:
     """Ensure sys.stdout and sys.stderr are valid file-like streams.
 
-    Under pythonw.exe on Windows, sys.stdout and sys.stderr are None.
-    Redirect them to gui.log in append mode to avoid AttributeError on print/log/isatty.
+    Under pythonw.exe or hidden console on Windows, redirects sys.stdout and sys.stderr
+    to gui.log in append mode to avoid crashes and capture all server logs.
     """
     log_path = get_gui_log_path()
-    if sys.stdout is None or sys.stderr is None:
+    if force_redirect or sys.stdout is None or sys.stderr is None:
         log_file = open(log_path, "a", encoding="utf-8", buffering=1)
-        if sys.stdout is None:
+        if force_redirect or sys.stdout is None:
             sys.stdout = log_file
-        if sys.stderr is None:
+        if force_redirect or sys.stderr is None:
             sys.stderr = log_file
     return log_path
 
@@ -52,14 +52,50 @@ def find_free_port(host: str = "127.0.0.1") -> int:
         return s.getsockname()[1]
 
 
+def hide_console_if_owned() -> None:
+    """Hide the console window if this process was launched directly from Explorer or Start Menu.
+
+    Checks if the process owns its own newly spawned console (via GetConsoleProcessList
+    returning <= 2 processes). If so, hides the console window so no empty black window stays open,
+    and redirects stdout and stderr to gui.log.
+    """
+    if sys.platform != "win32":
+        return
+    if "--debug-console" in sys.argv:
+        return
+    try:
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        user32 = ctypes.windll.user32
+        process_list = (ctypes.c_uint * 2)()
+        count = kernel32.GetConsoleProcessList(process_list, 2)
+        if count <= 2:
+            hwnd = kernel32.GetConsoleWindow()
+            if hwnd:
+                user32.ShowWindow(hwnd, 0)
+            setup_safe_stdio(force_redirect=True)
+    except Exception:
+        pass
+
+
 def run_gui(browser: bool = False, port: Optional[int] = None) -> None:
     """Start local uvicorn server in a background thread and launch desktop window."""
+    if not browser:
+        hide_console_if_owned()
     setup_safe_stdio()
     if port is None:
         port = find_free_port("127.0.0.1")
 
     url = f"http://127.0.0.1:{port}"
-    print(f"lplab GUI server listening on {url}", flush=True)
+    msg = f"lplab GUI server listening on {url}\n"
+    if sys.stdout:
+        sys.stdout.write(msg)
+        sys.stdout.flush()
+    try:
+        with open(get_gui_log_path(), "a", encoding="utf-8") as f:
+            f.write(msg)
+    except Exception:
+        pass
 
     from lplab.gui_server import app as fastapi_app
 

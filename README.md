@@ -2,18 +2,23 @@
 
 A local hands-on lab engine designed for the **CompTIA Linux+ (XK0-006)** certification. `lplab` provisions isolated WSL2 Linux environments, injects real-world troubleshooting scenarios, verifies solutions with automated validation tests, and generates custom exam-aligned practice scenarios using local or cloud AI models.
 
+> [!CAUTION]
+> **CRITICAL PREREQUISITE WARNING:**
+> **The program will not launch or provision labs unless Docker Desktop (or Docker Engine / Podman) is running BEFORE `lplab.exe` is opened or run from source.** Docker is required to build and extract the base rootfs container archives (`rockylinux-9.tar` and `ubuntu-24.04.tar`).
+
 ---
 
 ## Quick Start (Standalone Windows Executable)
 
 No Python installation required.
 
-1. **Download:** Download `lplab.exe` from the latest [GitHub Releases](https://github.com/bpf00010/linuxplus-labs/releases).
-2. **Prerequisites:**
+1. **Prerequisites:**
    - Windows 10 (Build 19041+) or Windows 11 with WSL2 enabled (`wsl --install`).
    - [Windows Terminal](https://aka.ms/terminal) (installed by default on Windows 11).
-   - Docker Desktop or Podman running once to build base image rootfs archives.
-3. **Run:** Double-click `lplab.exe` or run `lplab gui` from PowerShell / Command Prompt.
+   - **Docker Desktop** running (must be running before opening `lplab.exe`).
+2. **Download:** Download `lplab.exe` from the latest [GitHub Releases](https://github.com/bpf00010/linuxplus-labs/releases).
+3. **Run:** Double-click `lplab.exe` or run `lplab` from PowerShell / Command Prompt.
+   - By default, running `lplab.exe` with no arguments launches the **Desktop GUI**.
    - On first launch, `lplab.exe` unpacks its dashboard assets and seed labs directly into `%LOCALAPPDATA%\linuxplus-labs\`.
    - Click the base image pills in the dashboard to generate your local `rockylinux-9` and `ubuntu-24.04` rootfs containers.
    - Click **Start Lab** on Lab 01 to boot your first troubleshooting challenge!
@@ -22,7 +27,7 @@ No Python installation required.
 
 ## Adding `lplab` to Your System PATH
 
-Adding `lplab` to your user `PATH` allows you to launch the GUI, TUI, or CLI directly from any PowerShell or Command Prompt terminal by simply typing `lplab` or `lplab gui`.
+Adding `lplab` to your user `PATH` allows you to launch the GUI, TUI, or CLI directly from any PowerShell or Command Prompt terminal by simply typing `lplab`, `lplab --tui`, or `lplab list`.
 
 ### Method A: One-Line PowerShell Command (Recommended)
 
@@ -59,18 +64,18 @@ if ($userPath -notlike "*$binDir*") {
 
 ---
 
-## Launching the Desktop GUI
+## Launch Modes & Usage
 
-`lplab` supports multiple convenient ways to launch the interactive dashboard:
-
-### 1. Standalone Native Desktop Window
+### 1. Default: Desktop GUI (Standalone Window)
 ```powershell
-lplab gui
+# Simply run lplab (or double-click lplab.exe in File Explorer)
+lplab
 ```
 - Launches the native Windows desktop application powered by Microsoft Edge WebView2 and the embedded local FastAPI server on a loopback port.
-- Clean desktop window with zero browser address bar or clutter.
+- Clean monochrome desktop window with zero browser address bar or clutter.
+- Automatically hides background console when double-clicked from File Explorer or Start Menu.
 
-### 2. Web Browser Mode
+### 2. Browser Mode (Any Web Browser)
 ```powershell
 # Open in default web browser (Chrome, Edge, Firefox, Brave)
 lplab gui --browser
@@ -78,27 +83,44 @@ lplab gui --browser
 # Or specify a custom port
 lplab gui --browser --port 8765
 ```
-- Starts the local backend and automatically opens the dashboard in your default web browser at `http://127.0.0.1:8765`.
 
-### 3. Desktop & Start Menu Shortcuts
+### 3. Interactive Terminal User Interface (TUI)
+```powershell
+# Launch interactive TUI in your active PowerShell / Windows Terminal
+lplab --tui
+# or
+lplab tui
+```
+- Full keyboard-navigable split-pane terminal user interface powered by Textual directly inside Windows Terminal or PowerShell.
+- High-contrast corporate monochrome theme with live logs, work order briefs, and automated acceptance criteria verification.
+
+### 4. Rich Scriptable CLI Subcommands
+```powershell
+# List available labs and status table
+lplab list
+
+# Start a specific lab (launches Windows Terminal tab)
+lplab start lab-01
+
+# Verify student fixes (emits structured test report)
+lplab verify lab-01
+
+# Stop a running lab
+lplab stop lab-01
+
+# Reset and restore lab to initial broken state
+lplab reset lab-01 --yes
+
+# Build base image rootfs archives
+lplab build-image all
+```
+
+### 5. Desktop & Start Menu Shortcuts
 Run the included shortcut helper script:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\create_shortcut.ps1
 ```
 - Automatically creates clean shortcuts on your **Desktop** (`lplab.lnk`) and in your **Start Menu** (`Linux+ Lab Engine.lnk`).
-- Automatically targets `lplab.exe` (or the virtual environment) with silent windowless execution.
-
-### 4. Silent / Windowless Launcher (`launch_gui.vbs`)
-- Double-click `launch_gui.vbs` in File Explorer.
-- Launches the desktop GUI directly in the background without keeping an empty Command Prompt or PowerShell console window open.
-
-### 5. Interactive Terminal User Interface (TUI)
-```powershell
-lplab ui
-# or simply
-lplab
-```
-- Full keyboard-navigable split-pane terminal user interface powered by Textual directly inside Windows Terminal or PowerShell.
 
 ---
 
@@ -128,41 +150,6 @@ lplab
 | **lab-07** | Ubuntu 24.04 | Security, Services and Users | Harden OpenSSH daemon, `AllowGroups sshusers`, `.ssh` permissions, `chage` |
 | **lab-08** | Ubuntu 24.04 | Troubleshooting, System Management | Fix cgroup `MemoryMax` & `LimitNOFILE` drop-ins, mask runaway logger, `sysctl` |
 | **lab-09** | Rocky Linux 9 | System Management, Troubleshooting | Expand loop disk image, `resize2fs`, and harden systemd `.mount` unit |
-
-> [!TIP]
-> **Upgrading Base Images:** If you previously generated base `.tar` images, run `lplab build-image all --force` to bake in the latest `systemd`, `dbus-user-session`, and `policy-rc.d` fixes.
-
----
-
-## CLI & TUI Usage
-
-### Launch Interactive TUI
-```powershell
-lplab ui
-# or simply
-lplab
-```
-
-### CLI Subcommands
-```powershell
-# List available labs and status
-lplab list
-
-# Start a specific lab (launches Windows Terminal tab)
-lplab start lab-01
-
-# Verify student fixes (emits structured test report)
-lplab verify lab-01
-
-# Stop a running lab
-lplab stop lab-01
-
-# Reset and restore lab to initial broken state
-lplab reset lab-01 --yes
-
-# Build base image rootfs archives
-lplab build-image all
-```
 
 ---
 
@@ -199,6 +186,7 @@ lplab generate --domain security --topic "SSH Key Hardening and Chage Expiry" --
 
 ### 1. Requirements
 - Windows 10/11 with WSL2 enabled.
+- **Docker Desktop** running.
 - Python 3.11, 3.12, or 3.13.
 - `uv` (recommended) or standard `pip`.
 

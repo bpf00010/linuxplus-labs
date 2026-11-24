@@ -24,10 +24,27 @@ console = Console()
 
 
 @app.callback(invoke_without_command=True)
-def main_callback(ctx: typer.Context) -> None:
-    """Default entry point: launch TUI if no subcommand was specified."""
+def main_callback(
+    ctx: typer.Context,
+    tui: bool = typer.Option(
+        False,
+        "--tui",
+        "-t",
+        help="Launch interactive Textual TUI instead of default GUI",
+    ),
+) -> None:
+    """Linux+ WSL Lab Engine for CompTIA Linux+ (XK0-006) Hands-On Practice."""
     if ctx.invoked_subcommand is None:
-        ui()
+        if tui:
+            ui()
+        else:
+            gui()
+
+
+@app.command(name="tui")
+def tui_cmd() -> None:
+    """Launch the interactive Textual TUI."""
+    ui()
 
 
 @app.command()
@@ -65,32 +82,32 @@ def list_labs() -> None:
     labs = engine.discover_labs()
 
     if not labs:
-        console.print("[yellow]No labs found in[/yellow]", config.labs_dir)
+        console.print("[dim]No labs found in[/dim]", config.labs_dir)
         return
 
-    table = Table(title="CompTIA Linux+ (XK0-006) Labs", header_style="bold magenta")
-    table.add_column("ID", style="cyan", no_wrap=True)
+    table = Table(title="CompTIA Linux+ (XK0-006) Labs", header_style="bold white", border_style="dim")
+    table.add_column("ID", style="bold white", no_wrap=True)
     table.add_column("Title", style="white")
-    table.add_column("Base Distro", style="green")
-    table.add_column("Difficulty", style="blue")
+    table.add_column("Base Distro", style="dim")
+    table.add_column("Difficulty", style="dim")
     table.add_column("Status", style="bold")
-    table.add_column("Score", style="yellow")
+    table.add_column("Score", style="white")
     table.add_column("XK0-006 Domains", style="dim")
 
     for manifest, _ in labs:
         status, record = engine.get_lab_status(manifest)
         if status == LabRuntimeStatus.NOT_PROVISIONED:
-            status_str = "[yellow]NEW[/yellow]"
+            status_str = "[NEW]"
         elif status == LabRuntimeStatus.RUNNING:
-            status_str = "[bold green]RUNNING[/bold green]"
+            status_str = "[RUNNING]"
         elif status == LabRuntimeStatus.STOPPED:
-            status_str = "[dim]STOPPED[/dim]"
+            status_str = "[STOPPED]"
         elif status == LabRuntimeStatus.PASSED:
-            status_str = "[bold green]PASSED[/bold green]"
+            status_str = "[PASS]"
         elif status == LabRuntimeStatus.FAILED:
-            status_str = "[bold red]FAILED[/bold red]"
+            status_str = "[FAIL]"
         else:
-            status_str = status.value
+            status_str = f"[{status.value.upper()}]"
 
         score_str = f"{record.score_passed}/{record.score_total}" if record and record.last_verified else "-"
         domains_str = ", ".join(manifest.xk0_006_domains)
@@ -147,23 +164,23 @@ def verify(lab_id: str) -> None:
         raise typer.Exit(code=1)
 
     # Print results table
-    t = Table(title=f"Verification Report: {manifest.id} ({manifest.title})")
-    t.add_column("Status", justify="center", width=8)
-    t.add_column("Check ID", style="cyan")
+    t = Table(title=f"Verification Report: {manifest.id} ({manifest.title})", header_style="bold white", border_style="dim")
+    t.add_column("Status", justify="center", width=8, style="bold")
+    t.add_column("Check ID", style="bold white")
     t.add_column("Description", style="white")
     t.add_column("Details", style="dim")
 
     for chk in report.checks:
-        symbol = "[bold green]PASS[/bold green]" if chk.passed else "[bold red]FAIL[/bold red]"
+        symbol = "[PASS]" if chk.passed else "[FAIL]"
         t.add_row(symbol, chk.id, chk.description, chk.details)
 
     console.print(t)
-    color = "green" if report.passed else "red"
     console.print(
         Panel(
-            f"[bold {color}]RESULT: {'ALL CHECKS PASSED' if report.passed else 'VERIFICATION FAILED'} "
-            f"({report.score_passed} / {report.score_total})[/bold {color}]",
+            f"RESULT: {'ALL CHECKS PASSED' if report.passed else 'VERIFICATION FAILED'} "
+            f"({report.score_passed} / {report.score_total})",
             expand=False,
+            border_style="white" if report.passed else "dim",
         )
     )
 

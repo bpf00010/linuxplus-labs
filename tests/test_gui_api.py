@@ -19,7 +19,7 @@ def client():
 
 
 def test_get_root_serves_html_dashboard_without_cdns(client):
-    """Verify GET / returns HTTP 200 and serves self-contained HTML with zero external CDN scripts/styles."""
+    """Verify GET / returns HTTP 200, serves self-contained HTML with zero external CDNs and zero emojis."""
     resp = client.get("/")
     assert resp.status_code == 200
     assert "text/html" in resp.headers["content-type"].lower()
@@ -27,8 +27,8 @@ def test_get_root_serves_html_dashboard_without_cdns(client):
     html = resp.text
     # App title present
     assert "lplab // CompTIA Linux+ XK0-006" in html
-    assert "Launch Terminal" in html
-    assert "Verify" in html
+    assert "LAUNCH TERMINAL" in html
+    assert "VERIFY" in html
 
     # Strict Zero-CDN check: no external script tags or remote stylesheets
     external_scripts = re.findall(r'<script[^>]+src=["\'](https?://[^"\']+)["\']', html, re.IGNORECASE)
@@ -37,9 +37,16 @@ def test_get_root_serves_html_dashboard_without_cdns(client):
     external_links = re.findall(r'<link[^>]+href=["\'](https?://[^"\']+)["\']', html, re.IGNORECASE)
     assert external_links == [], f"Found disallowed external CDN styles/fonts: {external_links}"
 
+    # Strict Zero-Emoji check: no emojis or decorative icons in corporate monochrome interface
+    emoji_pattern = re.compile(
+        r"[\U00010000-\U0010ffff]|[\u2600-\u27bf]|[\u2300-\u23ff]|[\u2b50-\u2b55]|[✔✘🚀⚡🧪📋🔍⚠✅❌🐧✨🖥️⏹️🔄]"
+    )
+    found_emojis = emoji_pattern.findall(html)
+    assert found_emojis == [], f"Found disallowed emojis in index.html: {found_emojis}"
+
 
 def test_get_labs_returns_seed_labs(client):
-    """Verify GET /api/labs returns all 9 seed labs with expected schema and runtime statuses."""
+    """Verify GET /api/labs returns all 9 seed labs with expected schema, objectives, and runtime statuses."""
     resp = client.get("/api/labs")
     assert resp.status_code == 200
     labs = resp.json()
@@ -58,6 +65,9 @@ def test_get_labs_returns_seed_labs(client):
     assert "system_management" in lab01["xk0_006_domains"]
     assert lab01["status"] in [s.value for s in LabRuntimeStatus]
     assert "checks" in lab01
+    assert "objectives" in lab01
+    assert isinstance(lab01["objectives"], list)
+    assert len(lab01["objectives"]) > 0
 
 
 def test_get_lab_brief_returns_markdown_ticket(client):
@@ -295,5 +305,35 @@ def test_frozen_path_resolution_and_seed_lab_copy(monkeypatch, tmp_path):
     assert cfg.base_images_dir == appdata_dir / "linuxplus-labs" / "base-images"
     assert (cfg.labs_dir / "lab-seed-01" / "lab.yaml").is_file()
     assert (cfg.labs_dir / "lab-seed-02" / "lab.yaml").is_file()
+
+
+def test_entrypoint_inversion_dispatch(monkeypatch):
+    """Verify entrypoint dispatches to GUI on no args, TUI on --tui, and CLI on subcommands."""
+    from lplab.entrypoint import main as entrypoint_main
+
+    # 1. No arguments -> calls run_gui
+    with patch("lplab.gui.run_gui") as mock_gui:
+        monkeypatch.setattr("sys.argv", ["lplab"])
+        entrypoint_main()
+        assert mock_gui.called
+
+    # 2. --tui flag -> calls LabEngineApp.run
+    with patch("lplab.tui.LabEngineApp.run") as mock_tui:
+        monkeypatch.setattr("sys.argv", ["lplab", "--tui"])
+        entrypoint_main()
+        assert mock_tui.called
+
+    # 3. tui subcommand -> calls LabEngineApp.run
+    with patch("lplab.tui.LabEngineApp.run") as mock_tui:
+        monkeypatch.setattr("sys.argv", ["lplab", "tui"])
+        entrypoint_main()
+        assert mock_tui.called
+
+    # 4. list subcommand -> calls Typer CLI app
+    with patch("lplab.cli.app") as mock_cli:
+        monkeypatch.setattr("sys.argv", ["lplab", "list"])
+        entrypoint_main()
+        assert mock_cli.called
+
 
 
