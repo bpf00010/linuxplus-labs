@@ -4,9 +4,23 @@ $WshShell = New-Object -ComObject WScript.Shell
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $scriptDir) { $scriptDir = (Get-Location).Path }
 
+$exePath = Join-Path $scriptDir "lplab.exe"
+$distExePath = Join-Path $scriptDir "dist\lplab.exe"
 $pythonwPath = Join-Path $scriptDir ".venv\Scripts\pythonw.exe"
-$targetPath = if (Test-Path $pythonwPath) { $pythonwPath } else { "wscript.exe" }
-$arguments = if (Test-Path $pythonwPath) { "-m lplab.gui" } else { "`"$scriptDir\launch_gui.vbs`"" }
+
+if (Test-Path $exePath) {
+    $targetPath = $exePath
+    $arguments = "gui"
+} elseif (Test-Path $distExePath) {
+    $targetPath = $distExePath
+    $arguments = "gui"
+} elseif (Test-Path $pythonwPath) {
+    $targetPath = $pythonwPath
+    $arguments = "-m lplab.gui"
+} else {
+    $targetPath = "wscript.exe"
+    $arguments = "`"$scriptDir\launch_gui.vbs`""
+}
 $icon = "$env:SystemRoot\System32\shell32.dll,220"
 
 # 1. Desktop shortcut

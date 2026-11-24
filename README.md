@@ -13,10 +13,92 @@ No Python installation required.
    - Windows 10 (Build 19041+) or Windows 11 with WSL2 enabled (`wsl --install`).
    - [Windows Terminal](https://aka.ms/terminal) (installed by default on Windows 11).
    - Docker Desktop or Podman running once to build base image rootfs archives.
-3. **Run:** Double-click `lplab.exe`.
+3. **Run:** Double-click `lplab.exe` or run `lplab gui` from PowerShell / Command Prompt.
    - On first launch, `lplab.exe` unpacks its dashboard assets and seed labs directly into `%LOCALAPPDATA%\linuxplus-labs\`.
    - Click the base image pills in the dashboard to generate your local `rockylinux-9` and `ubuntu-24.04` rootfs containers.
    - Click **Start Lab** on Lab 01 to boot your first troubleshooting challenge!
+
+---
+
+## Adding `lplab` to Your System PATH
+
+Adding `lplab` to your user `PATH` allows you to launch the GUI, TUI, or CLI directly from any PowerShell or Command Prompt terminal by simply typing `lplab` or `lplab gui`.
+
+### Method A: One-Line PowerShell Command (Recommended)
+
+1. Move or save `lplab.exe` into a permanent directory, e.g. `$HOME\bin`, `C:\tools\lplab`, or `%LOCALAPPDATA%\Programs\lplab`.
+2. Open PowerShell and run:
+
+```powershell
+# Set the directory where you placed lplab.exe:
+$binDir = "$HOME\bin"
+
+# Permanently append to your User PATH:
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+if ($userPath -notlike "*$binDir*") {
+    [Environment]::SetEnvironmentVariable("Path", "$userPath;$binDir", "User")
+    Write-Host "Added $binDir to PATH. Please restart PowerShell to take effect." -ForegroundColor Green
+}
+```
+
+### Method B: Windows Settings GUI
+
+1. Press `Win + R`, type `sysdm.cpl` and press **Enter** (or open **Windows Settings** > **System** > **About** > **Advanced system settings**).
+2. Click the **Environment Variables...** button.
+3. Under **User variables**, select `Path` and click **Edit...**.
+4. Click **New** and paste the folder path containing `lplab.exe` (e.g. `C:\Users\<YourUser>\bin`).
+5. Click **OK** to save and close the windows.
+6. Open a new PowerShell window and run `lplab --help` to confirm!
+
+> [!TIP]
+> **For Developers Running from Source:**
+> To add the Python virtual environment scripts to your PATH:
+> ```powershell
+> [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path", "User") + ";$((Get-Item .venv\Scripts).FullName)", "User")
+> ```
+
+---
+
+## Launching the Desktop GUI
+
+`lplab` supports multiple convenient ways to launch the interactive dashboard:
+
+### 1. Standalone Native Desktop Window
+```powershell
+lplab gui
+```
+- Launches the native Windows desktop application powered by Microsoft Edge WebView2 and the embedded local FastAPI server on a loopback port.
+- Clean desktop window with zero browser address bar or clutter.
+
+### 2. Web Browser Mode
+```powershell
+# Open in default web browser (Chrome, Edge, Firefox, Brave)
+lplab gui --browser
+
+# Or specify a custom port
+lplab gui --browser --port 8765
+```
+- Starts the local backend and automatically opens the dashboard in your default web browser at `http://127.0.0.1:8765`.
+
+### 3. Desktop & Start Menu Shortcuts
+Run the included shortcut helper script:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\create_shortcut.ps1
+```
+- Automatically creates clean shortcuts on your **Desktop** (`lplab.lnk`) and in your **Start Menu** (`Linux+ Lab Engine.lnk`).
+- Automatically targets `lplab.exe` (or the virtual environment) with silent windowless execution.
+
+### 4. Silent / Windowless Launcher (`launch_gui.vbs`)
+- Double-click `launch_gui.vbs` in File Explorer.
+- Launches the desktop GUI directly in the background without keeping an empty Command Prompt or PowerShell console window open.
+
+### 5. Interactive Terminal User Interface (TUI)
+```powershell
+lplab ui
+# or simply
+lplab
+```
+- Full keyboard-navigable split-pane terminal user interface powered by Textual directly inside Windows Terminal or PowerShell.
 
 ---
 
@@ -27,7 +109,7 @@ No Python installation required.
   - **Terminal TUI:** Interactive split-pane terminal user interface powered by Textual.
   - **Scriptable CLI:** Rich-formatted command line interface built with Typer.
 - **Strict Namespace Guard:** Every managed WSL distribution is prefixed with `lplab-` (e.g. `lplab-lab-01-systemd-storage`). Destructive operations (`terminate`, `unregister`) enforce this safeguard to ensure personal distributions (e.g. `Ubuntu`, `Debian`) are never affected.
-- **Full systemd Environment:** Booted with native WSL2 systemd configuration (`systemd=true`), verified via `systemctl is-system-running`.
+- **Full systemd Environment:** Booted with native WSL2 systemd configuration (`systemd=true`), verified via `ps -p 1 -o comm=` and `systemctl is-system-running`.
 - **Pure Stdin Script Execution:** All setup and verification scripts stream over stdin (`bash -s`), avoiding file locking or mount issues.
 - **Isolated Network Namespaces:** Network and firewall challenges use dedicated network namespaces (`ip netns`) or isolated nftables tables (`table inet lplab_<id>`), ensuring host networking remains completely untouched.
 

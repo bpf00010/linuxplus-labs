@@ -43,6 +43,11 @@ datas += webview_datas
 binaries += webview_binaries
 hiddenimports += webview_hiddenimports
 
+textual_datas, textual_binaries, textual_hiddenimports = collect_all('textual')
+datas += textual_datas
+binaries += textual_binaries
+hiddenimports += textual_hiddenimports
+
 a = Analysis(
     ['src/lplab/entrypoint.py'],
     pathex=['src'],
@@ -68,7 +73,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
-    console=False,
+    console=True,
     disable_windowed_traceback=False,
     icon='assets/lplab.ico',
 )
