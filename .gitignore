@@ -9,6 +9,7 @@ base-images/*.tar
 *.egg-info/
 dist/
 build/
+*.exe
 *.log
 config.yaml
 state.json
