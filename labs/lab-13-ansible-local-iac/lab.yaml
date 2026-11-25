@@ -1,0 +1,17 @@
+id: "lab-13"
+slug: "lab-13-ansible-local-iac"
+title: "Fix and Execute Ansible Local Playbook for Service Deployment"
+distro_name: "lplab-13"
+base_image: "ubuntu-24.04"
+student_user: "sysadmin"
+difficulty: "advanced"
+estimated_minutes: 35
+xk0_006_domains:
+  - "automation_scripting"
+  - "services_and_users"
+  - "system_management"
+objectives:
+  - "Diagnose and fix YAML syntax, variable, and handler errors in an Ansible playbook"
+  - "Deploy configuration files using Ansible template module with correct variables"
+  - "Create a system user and manage systemd service lifecycle via Ansible handlers"
+  - "Achieve full idempotency with zero changed tasks on second playbook run"

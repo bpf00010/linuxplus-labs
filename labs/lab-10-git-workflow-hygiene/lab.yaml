@@ -1,0 +1,16 @@
+id: "lab-10"
+slug: "lab-10-git-workflow-hygiene"
+title: "Git Workflow Hygiene: Merge Conflicts, Secret Removal, and Pre-Commit Hooks"
+distro_name: "lplab-10"
+base_image: "ubuntu-24.04"
+student_user: "sysadmin"
+difficulty: "intermediate"
+estimated_minutes: 25
+xk0_006_domains:
+  - "automation_scripting"
+  - "security"
+objectives:
+  - "Resolve a merge conflict between feature and main branches keeping the specified value"
+  - "Remove a tracked secrets file from Git history and add it to .gitignore"
+  - "Fix and enable a pre-commit hook that validates staged shell scripts with bash -n"
+  - "Create an annotated Git tag on the final merged main commit"

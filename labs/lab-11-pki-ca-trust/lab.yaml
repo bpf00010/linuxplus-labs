@@ -1,0 +1,17 @@
+id: "lab-11"
+slug: "lab-11-pki-ca-trust"
+title: "PKI Certificate Authority Trust Chain and Nginx TLS Repair"
+distro_name: "lplab-11"
+base_image: "ubuntu-24.04"
+student_user: "sysadmin"
+difficulty: "intermediate"
+estimated_minutes: 30
+xk0_006_domains:
+  - "security"
+  - "services_and_users"
+  - "troubleshooting"
+objectives:
+  - "Generate a CSR with correct SAN and sign it using the internal CA"
+  - "Install private key with strict 0600 permissions and deploy signed certificate"
+  - "Install internal CA into Ubuntu system trust store and run update-ca-certificates"
+  - "Reload Nginx and verify TLS trust chain without curl --insecure"

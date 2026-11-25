@@ -7,6 +7,7 @@ from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
+from textual.css.query import NoMatches
 from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
@@ -440,13 +441,19 @@ class LabEngineApp(App):
         except Exception:
             pass
 
+    def on_unmount(self) -> None:
+        """Cancel all background workers when the app is unmounting."""
+        self.workers.cancel_all()
+
     def log_message(self, message: str) -> None:
         """Post a line to persistent buffer and live RichLog."""
+        if not self.is_running or not self.is_mounted:
+            return
         self.log_history.append(message)
         try:
             log_view = self.query_one("#log-view", RichLog)
             log_view.write(message)
-        except Exception:
+        except (NoMatches, Exception):
             pass
 
     def _switch_to_tab(self, tab_id: str) -> None:
@@ -483,9 +490,14 @@ class LabEngineApp(App):
 
     async def refresh_labs(self) -> None:
         """Reload labs from disk and populate table, preserving current selection."""
+        if not self.is_running or not self.is_mounted:
+            return
         current_id = self.selected_manifest.id if self.selected_manifest else None
         self.labs = self.engine.discover_labs()
-        table = self.query_one("#labs-table", DataTable)
+        try:
+            table = self.query_one("#labs-table", DataTable)
+        except NoMatches:
+            return
         table.clear()
 
         target_row = 0
@@ -524,12 +536,16 @@ class LabEngineApp(App):
 
     async def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         """Handle Enter key or double-click on a table row to select and launch."""
+        if not self.is_running or not self.is_mounted:
+            return
         row_key = event.row_key.value
         await self.select_lab_by_id(row_key)
         self.action_start_selected()
 
     async def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         """Handle keyboard arrow navigation or single click."""
+        if not self.is_running or not self.is_mounted:
+            return
         if event.row_key:
             row_key = event.row_key.value
             await self.select_lab_by_id(row_key)
@@ -550,7 +566,12 @@ class LabEngineApp(App):
 
     def update_header_banner(self) -> None:
         """Update top metadata banner of selected lab."""
-        banner = self.query_one("#lab-header-banner", Static)
+        if not self.is_running or not self.is_mounted:
+            return
+        try:
+            banner = self.query_one("#lab-header-banner", Static)
+        except NoMatches:
+            return
         if not self.selected_manifest:
             banner.update("[#6e7b8b]NO LAB SELECTED[/#6e7b8b]")
             return
@@ -565,6 +586,8 @@ class LabEngineApp(App):
 
     async def update_details_view(self) -> None:
         """Update right-pane Banner, Work Order, and Objectives/Verification tabs."""
+        if not self.is_running or not self.is_mounted:
+            return
         if not self.selected_manifest or not self.selected_path:
             return
 
@@ -588,7 +611,7 @@ class LabEngineApp(App):
                 f"[#9ba7b4]Domains:[/#9ba7b4] [#e6edf3]{domains_str}[/#e6edf3]  |  "
                 f"[#9ba7b4]Est. Time:[/#9ba7b4] [#e6edf3]{m.estimated_minutes}m[/#e6edf3]"
             )
-        except Exception:
+        except (NoMatches, Exception):
             pass
 
         # 3. Update Acceptance Criteria Box in Work Order Tab
@@ -601,7 +624,7 @@ class LabEngineApp(App):
             else:
                 lines.append("  [#6e7b8b]No explicit objectives listed in manifest.[/#6e7b8b]")
             crit_box.update("\n".join(lines))
-        except Exception:
+        except (NoMatches, Exception):
             pass
 
         # 4. Update Work Order Markdown
@@ -610,7 +633,7 @@ class LabEngineApp(App):
             content = brief_file.read_text(encoding="utf-8") if brief_file.is_file() else "# No Brief Found"
             markdown_widget = self.query_one("#work-order-markdown", Markdown)
             await markdown_widget.update(content)
-        except Exception:
+        except (NoMatches, Exception):
             pass
 
         # 5. Update Acceptance Criteria & Verification Tab
@@ -646,7 +669,7 @@ class LabEngineApp(App):
                 )
 
             verify_widget.update("\n".join(sections))
-        except Exception:
+        except (NoMatches, Exception):
             pass
 
     @work(thread=True)

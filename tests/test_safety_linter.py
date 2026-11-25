@@ -66,7 +66,7 @@ nft add rule inet lplab02 input tcp dport 18080 drop
 
 
 def test_seed_labs_pass_linter():
-    """Verify that all nine shipped seed labs pass the safety linter with zero errors."""
+    """Verify that all fourteen shipped seed labs pass the safety linter with zero errors."""
     labs_root = Path(__file__).resolve().parent.parent / "labs"
 
     seed_labs = [
@@ -79,6 +79,11 @@ def test_seed_labs_pass_linter():
         "lab-07-ssh-pam-hardening",
         "lab-08-systemd-cgroups-sysctl",
         "lab-09-systemd-mount-resize",
+        "lab-10-git-workflow-hygiene",
+        "lab-11-pki-ca-trust",
+        "lab-12-backup-rsync-integrity",
+        "lab-13-ansible-local-iac",
+        "lab-14-dns-socket-forensics",
     ]
 
     for lab_slug in seed_labs:

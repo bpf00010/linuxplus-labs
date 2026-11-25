@@ -130,7 +130,7 @@ def create_app(config: Optional[AppConfig] = None, engine: Optional[LabEngine] =
     app = FastAPI(
         title="lplab-gui-server",
         description="Local desktop API backend for lplab CompTIA Linux+ Lab Engine",
-        version="0.3.0",
+        version="0.4.0",
         lifespan=lifespan,
     )
 

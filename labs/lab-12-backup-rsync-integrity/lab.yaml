@@ -1,0 +1,17 @@
+id: "lab-12"
+slug: "lab-12-backup-rsync-integrity"
+title: "Backup Restoration, Rsync Synchronization, and Integrity Verification"
+distro_name: "lplab-12"
+base_image: "ubuntu-24.04"
+student_user: "sysadmin"
+difficulty: "intermediate"
+estimated_minutes: 25
+xk0_006_domains:
+  - "system_management"
+  - "troubleshooting"
+  - "security"
+objectives:
+  - "Restore corrupted production files from a golden backup tarball preserving permissions and symlinks"
+  - "Verify file integrity using SHA256SUMS checksums"
+  - "Synchronize restored data to a backup mirror using rsync with exclusion filters"
+  - "Create a compressed archive with checksum verification file"

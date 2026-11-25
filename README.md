@@ -150,6 +150,14 @@ powershell -ExecutionPolicy Bypass -File .\create_shortcut.ps1
 | **lab-07** | Ubuntu 24.04 | Security, Services and Users | Harden OpenSSH daemon, `AllowGroups sshusers`, `.ssh` permissions, `chage` |
 | **lab-08** | Ubuntu 24.04 | Troubleshooting, System Management | Fix cgroup `MemoryMax` & `LimitNOFILE` drop-ins, mask runaway logger, `sysctl` |
 | **lab-09** | Rocky Linux 9 | System Management, Troubleshooting | Expand loop disk image, `resize2fs`, and harden systemd `.mount` unit |
+| **lab-10** | Ubuntu 24.04 | Automation, Security | Git merge conflicts, secret removal from tracking, pre-commit hooks, annotated tags |
+| **lab-11** | Ubuntu 24.04 | Security, Services, Troubleshooting | PKI CA trust chain, CSR with SAN, Nginx TLS certificate repair |
+| **lab-12** | Ubuntu 24.04 | System Management, Security | Backup restore from tarball, rsync with exclusions, checksum verification |
+| **lab-13** | Ubuntu 24.04 | Automation, Services, System Mgmt | Fix broken Ansible playbook, deploy systemd service, verify idempotency |
+| **lab-14** | Ubuntu 24.04 | Troubleshooting, Services, Scripting | DNS `dnsmasq` repair, systemd socket activation, HTTP log forensics |
+
+> [!IMPORTANT]
+> **After upgrading to v0.4.0**, run `lplab build-image ubuntu-24.04 --force` once to rebuild the Ubuntu base image with newly required packages (`git`, `rsync`, `dnsmasq`, `ansible-core`, `python3-venv`, `gawk`, `socat`).
 
 ---
 

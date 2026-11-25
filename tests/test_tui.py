@@ -9,14 +9,14 @@ from lplab.tui import GenerateModal, LabEngineApp
 
 
 @pytest.mark.asyncio
-async def test_tui_loads_all_nine_labs_and_updates_views():
-    """Verify all 9 labs load in DataTable and selecting updates banner, brief, and acceptance criteria."""
+async def test_tui_loads_all_fourteen_labs_and_updates_views():
+    """Verify all 14 labs load in DataTable and selecting updates banner, brief, and acceptance criteria."""
     config = load_config()
     app = LabEngineApp(config=config)
 
     async with app.run_test() as pilot:
         table = app.query_one("#labs-table", DataTable)
-        assert table.row_count == 9
+        assert table.row_count == 14
 
         banner = app.query_one("#lab-header-banner", Static)
         work_order = app.query_one("#work-order-markdown", Markdown)
@@ -57,6 +57,15 @@ async def test_tui_loads_all_nine_labs_and_updates_views():
         banner_text_09 = str(banner.render())
         assert "LAB-09" in banner_text_09
         assert "archive" in work_order._markdown
+
+        # 4. Select lab-13 (new lab)
+        await app.select_lab_by_id("lab-13")
+        await pilot.pause(0.1)
+
+        assert app.selected_manifest is not None
+        assert app.selected_manifest.id == "lab-13"
+        banner_text_13 = str(banner.render())
+        assert "LAB-13" in banner_text_13
 
 
 @pytest.mark.asyncio
@@ -106,7 +115,9 @@ async def test_tui_action_bar_launch_button_starts_selected_lab():
         with patch.object(app.engine, "start_lab") as mock_start:
             # Click the 'Launch [Enter]' action bar button
             await pilot.click("#btn-action-start")
-            await pilot.pause(0.2)
+            # Wait for the @work(thread=True) worker to complete
+            await app.workers.wait_for_complete()
+            await pilot.pause()
 
             assert mock_start.called
             called_manifest = (

@@ -32,6 +32,13 @@ UBUNTU_PACKAGES = [
     "python3",
     "cron",
     "ca-certificates",
+    "git",
+    "rsync",
+    "dnsmasq",
+    "ansible-core",
+    "python3-venv",
+    "gawk",
+    "socat",
 ]
 
 ROCKY_PACKAGES = [
@@ -107,6 +114,7 @@ def generate_dockerfile(base_image: str) -> str:
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends {pkgs} \\
     && rm -f /usr/sbin/policy-rc.d \\
+    && (systemctl disable dnsmasq.service 2>/dev/null || true) \\
     && ln -sf /lib/systemd/systemd /sbin/init \\
     && mkdir -p /run/sshd \\
     && (systemctl unmask systemd-journald.service dbus.service 2>/dev/null || true) \\

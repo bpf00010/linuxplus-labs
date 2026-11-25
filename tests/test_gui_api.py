@@ -46,16 +46,16 @@ def test_get_root_serves_html_dashboard_without_cdns(client):
 
 
 def test_get_labs_returns_seed_labs(client):
-    """Verify GET /api/labs returns all 9 seed labs with expected schema, objectives, and runtime statuses."""
+    """Verify GET /api/labs returns all 14 seed labs with expected schema, objectives, and runtime statuses."""
     resp = client.get("/api/labs")
     assert resp.status_code == 200
     labs = resp.json()
     assert isinstance(labs, list)
-    assert len(labs) == 9
+    assert len(labs) == 14
 
     lab_ids = [l["id"] for l in labs]
-    for i in range(1, 10):
-        expected_id = f"lab-0{i}"
+    for i in range(1, 15):
+        expected_id = f"lab-{i:02d}" if i < 10 else f"lab-{i}"
         assert expected_id in lab_ids
 
     # Inspect lab-01 schema
@@ -420,11 +420,11 @@ def test_ai_detect_and_models_endpoints(client):
 
 
 def test_zero_duplicate_labs_and_clean_sidebar(client):
-    """Verify all 9 labs are unique (no duplicate IDs or distro names), and sidebar is clean."""
+    """Verify all 14 labs are unique (no duplicate IDs or distro names), and sidebar is clean."""
     resp = client.get("/api/labs")
     assert resp.status_code == 200
     labs = resp.json()
-    assert len(labs) == 9
+    assert len(labs) == 14
 
     # Strict uniqueness of IDs and distro names
     ids = [lab["id"] for lab in labs]
