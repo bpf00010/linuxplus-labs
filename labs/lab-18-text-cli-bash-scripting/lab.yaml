@@ -1,0 +1,16 @@
+id: "lab-18"
+slug: "lab-18-text-cli-bash-scripting"
+title: "Text Processing, Find, and Scripting"
+distro_name: "lplab-18"
+base_image: "ubuntu-24.04"
+student_user: "sysadmin"
+difficulty: "intermediate"
+estimated_minutes: 25
+xk0_006_domains:
+  - "automation_scripting"
+  - "system_management"
+objectives:
+  - "Write unique sorted active usernames from /srv/data/users.csv to /srv/data/active_users.txt"
+  - "Replace all old-db.internal with prod-db.internal in /srv/data/app.conf"
+  - "Delete *.tmp files over 1MB in /srv/data/files/ while keeping .log and small .tmp files"
+  - "Create executable /usr/local/bin/check-file.sh printing EXISTS (exit 0) or MISSING (exit 1)"

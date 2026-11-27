@@ -9,14 +9,14 @@ from lplab.tui import GenerateModal, LabEngineApp
 
 
 @pytest.mark.asyncio
-async def test_tui_loads_all_fourteen_labs_and_updates_views():
-    """Verify all 14 labs load in DataTable and selecting updates banner, brief, and acceptance criteria."""
+async def test_tui_loads_all_nineteen_labs_and_updates_views():
+    """Verify all 19 labs load in DataTable and selecting updates banner, brief, and checks."""
     config = load_config()
     app = LabEngineApp(config=config)
 
     async with app.run_test() as pilot:
         table = app.query_one("#labs-table", DataTable)
-        assert table.row_count == 14
+        assert table.row_count == 19
 
         banner = app.query_one("#lab-header-banner", Static)
         work_order = app.query_one("#work-order-markdown", Markdown)
@@ -31,12 +31,12 @@ async def test_tui_loads_all_fourteen_labs_and_updates_views():
         banner_text = str(banner.render())
         assert "LAB-02" in banner_text
 
-        # Verify Work Order content updated for lab-02
+        # Verify Tasks markdown updated for lab-02
         assert "api.lab.internal" in work_order._markdown
 
-        # Verify Acceptance Criteria / Objectives updated for lab-02
+        # Verify Objectives / Checks updated for lab-02
         verify_text = str(verify_widget.render())
-        assert "ACCEPTANCE CRITERIA / OBJECTIVES" in verify_text
+        assert "OBJECTIVES:" in verify_text
 
         # 2. Select lab-06
         await app.select_lab_by_id("lab-06")
@@ -58,14 +58,19 @@ async def test_tui_loads_all_fourteen_labs_and_updates_views():
         assert "LAB-09" in banner_text_09
         assert "archive" in work_order._markdown
 
-        # 4. Select lab-13 (new lab)
-        await app.select_lab_by_id("lab-13")
+        # 4. Select lab-15 and lab-19 (new labs)
+        await app.select_lab_by_id("lab-15")
         await pilot.pause(0.1)
-
         assert app.selected_manifest is not None
-        assert app.selected_manifest.id == "lab-13"
-        banner_text_13 = str(banner.render())
-        assert "LAB-13" in banner_text_13
+        assert app.selected_manifest.id == "lab-15"
+        assert "legacy-helper" in work_order._markdown
+
+        await app.select_lab_by_id("lab-19")
+        await pilot.pause(0.1)
+        assert app.selected_manifest is not None
+        assert app.selected_manifest.id == "lab-19"
+        assert "LAB-19" in str(banner.render())
+        assert "dpkg" in work_order._markdown
 
 
 @pytest.mark.asyncio
@@ -167,13 +172,15 @@ async def test_tui_initial_mount_renders_metadata_and_acceptance_criteria():
         criteria_text = str(criteria_box.render())
 
         # Check lab-01 metadata displayed
-        assert "LAB-01" in meta_text or "Systemd Storage" in meta_text
+        assert "LAB-01" in meta_text
         assert "rockylinux-9" in meta_text
 
-        # Check acceptance criteria displayed
-        assert "ACCEPTANCE CRITERIA" in criteria_text
-        assert "appdata" in criteria_text.lower() or "journald" in criteria_text.lower() or "logrotate" in criteria_text.lower()
+        # Check objectives displayed
+        assert "OBJECTIVES:" in criteria_text
+        assert "appdata" in criteria_text.lower() or "app-worker" in criteria_text.lower()
 
-        # Check work order markdown loaded
-        assert "TICKET-8921" in work_order._markdown or "Incident Summary" in work_order._markdown
+        # Check simplified PBQ markdown loaded
+        assert "Lab 01:" in work_order._markdown
+        assert "## Goal" in work_order._markdown
+        assert "## Tasks" in work_order._markdown
 

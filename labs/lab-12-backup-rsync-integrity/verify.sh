@@ -2,19 +2,19 @@
 # Non-destructive, idempotent verification script emitting strict JSON to stdout
 
 chk1_pass=false
-chk1_desc="bin/run.sh is executable, current.conf is a symlink to app.conf, and SHA256SUMS check passes"
+chk1_desc="Is /srv/app-prod restored with executable bin/run.sh, symlink current.conf, and valid SHA256SUMS?"
 chk1_det=""
 
 chk2_pass=false
-chk2_desc="backup-mirror contains app.conf and bin/run.sh with no .tmp files and no cache directory"
+chk2_desc="Does /srv/backup-mirror contain app.conf and bin/run.sh without *.tmp or cache/?"
 chk2_det=""
 
 chk3_pass=false
-chk3_desc="verified-mirror.tar.xz is a valid tar.xz archive containing app.conf"
+chk3_desc="Is /var/backups/verified-mirror.tar.xz a valid archive containing app.conf?"
 chk3_det=""
 
 chk4_pass=false
-chk4_desc="verified-mirror.tar.xz.sha256 checksum verification passes"
+chk4_desc="Does /var/backups/verified-mirror.tar.xz.sha256 pass sha256sum -c?"
 chk4_det=""
 
 # Check 1: Restored production files
@@ -39,7 +39,7 @@ fi
 
 if [ "$run_exec" = true ] && [ "$symlink_ok" = true ] && [ "$checksum_ok" = true ]; then
     chk1_pass=true
-    chk1_det="bin/run.sh is executable, current.conf -> app.conf, SHA256SUMS passes."
+    chk1_det="Restored files and SHA256SUMS verified."
 else
     chk1_det="run_exec=${run_exec}, symlink_ok=${symlink_ok}, checksum_ok=${checksum_ok}"
 fi
@@ -62,7 +62,7 @@ tmp_count=$(find /srv/backup-mirror -name '*.tmp' 2>/dev/null | wc -l)
 
 if [ "$mirror_appconf" = true ] && [ "$mirror_runsh" = true ] && [ "$no_tmp" = true ] && [ "$no_cache" = true ]; then
     chk2_pass=true
-    chk2_det="backup-mirror has app.conf and bin/run.sh, no .tmp files, no cache directory."
+    chk2_det="backup-mirror synced with exclusions."
 else
     chk2_det="appconf=${mirror_appconf}, runsh=${mirror_runsh}, no_tmp=${no_tmp}, no_cache=${no_cache}"
 fi
@@ -82,7 +82,7 @@ fi
 
 if [ "$archive_valid" = true ] && [ "$contains_appconf" = true ]; then
     chk3_pass=true
-    chk3_det="verified-mirror.tar.xz is valid and contains app.conf."
+    chk3_det="verified-mirror.tar.xz valid and contains app.conf."
 else
     chk3_det="archive_valid=${archive_valid}, contains_appconf=${contains_appconf}"
 fi
@@ -97,12 +97,11 @@ fi
 
 if [ "$checksum_file_ok" = true ]; then
     chk4_pass=true
-    chk4_det="SHA-256 checksum file verification passes."
+    chk4_det="SHA-256 checksum verified."
 else
     chk4_det="checksum_file_ok=${checksum_file_ok}"
 fi
 
-# Calculate score
 score_passed=0
 [ "$chk1_pass" = true ] && score_passed=$((score_passed + 1))
 [ "$chk2_pass" = true ] && score_passed=$((score_passed + 1))

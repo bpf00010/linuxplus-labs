@@ -2,19 +2,19 @@
 # Non-destructive, idempotent verification script emitting strict JSON to stdout
 
 chk1_pass=false
-chk1_desc="ansible-playbook --syntax-check site.yml passes"
+chk1_desc="Does ansible-playbook --syntax-check site.yml pass?"
 chk1_det=""
 
 chk2_pass=false
-chk2_desc="User reportsvc exists and agent.conf contains MODE=production and PORT=18060"
+chk2_desc="Does user reportsvc exist and does agent.conf contain MODE=production and PORT=18060?"
 chk2_det=""
 
 chk3_pass=false
-chk3_desc="report-agent.service is enabled and active under systemd"
+chk3_desc="Is report-agent.service enabled and active?"
 chk3_det=""
 
 chk4_pass=false
-chk4_desc="Idempotency: second playbook run exits 0 with changed=0 and failed=0"
+chk4_desc="Does a second playbook run exit 0 with changed=0 and failed=0?"
 chk4_det=""
 
 # Check 1: Syntax check
@@ -26,7 +26,7 @@ if [ "$syntax_ok" = true ]; then
     chk1_det="Playbook syntax check passed."
 else
     safe_syntax=$(printf '%s' "$syntax_out" | head -n 3 | tr '\r\n"\\' ' ' | head -c 160)
-    chk1_det="Syntax check failed: ${safe_syntax}"
+    chk1_det="Syntax error: ${safe_syntax}"
 fi
 
 # Check 2: User and config
@@ -42,9 +42,9 @@ fi
 
 if [ "$user_exists" = true ] && [ "$has_mode" = true ] && [ "$has_port" = true ]; then
     chk2_pass=true
-    chk2_det="User reportsvc exists, agent.conf has MODE=production and PORT=18060."
+    chk2_det="User reportsvc exists and agent.conf matches."
 else
-    chk2_det="user_exists=${user_exists}, has_mode=${has_mode}, has_port=${has_port}"
+    chk2_det="user=${user_exists}, mode=${has_mode}, port=${has_port}"
 fi
 
 # Check 3: Service status
@@ -76,12 +76,11 @@ fi
 
 if [ "$idempotent_ok" = true ]; then
     chk4_pass=true
-    chk4_det="Idempotency confirmed: changed=0, failed=0 on second run."
+    chk4_det="Playbook idempotent (changed=0, failed=0)."
 else
     chk4_det="rc=${idemp_rc}, changed=${changed_count:-unknown}, failed=${failed_count:-unknown}"
 fi
 
-# Calculate score
 score_passed=0
 [ "$chk1_pass" = true ] && score_passed=$((score_passed + 1))
 [ "$chk2_pass" = true ] && score_passed=$((score_passed + 1))

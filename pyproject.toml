@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lplab"
-version = "0.4.0"
+version = "0.5.0"
 description = "Linux+ WSL Lab Engine for CompTIA Linux+ (XK0-006) Hands-On Practice"
 readme = "README.md"
 requires-python = ">=3.11"

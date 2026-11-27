@@ -2,19 +2,19 @@
 # Non-destructive, idempotent verification script emitting strict JSON to stdout
 
 chk1_pass=false
-chk1_desc="portal.key has mode 600 and portal.crt verifies against the internal CA"
+chk1_desc="Does portal.key have mode 0600 and does portal.crt verify against /etc/lab-ca/ca.crt?"
 chk1_det=""
 
 chk2_pass=false
-chk2_desc="portal.crt contains SAN DNS:portal.lab.internal"
+chk2_desc="Does portal.crt contain SAN DNS:portal.lab.internal?"
 chk2_det=""
 
 chk3_pass=false
-chk3_desc="lab-ca.crt is installed in system trust store and nginx.service is active"
+chk3_desc="Is lab-ca.crt installed in the system trust store and is nginx.service active?"
 chk3_det=""
 
 chk4_pass=false
-chk4_desc="curl https://portal.lab.internal:18450/ succeeds without -k and returns trusted"
+chk4_desc="Does curl https://portal.lab.internal:18450/ succeed without -k and return trusted?"
 chk4_det=""
 
 # Check 1: Key permissions and cert verification
@@ -24,9 +24,9 @@ openssl verify -CAfile /etc/lab-ca/ca.crt /etc/ssl/lab-portal/portal.crt >/dev/n
 
 if [ "$key_mode" = "600" ] && [ "$cert_verify" = true ]; then
     chk1_pass=true
-    chk1_det="portal.key mode is 600 and certificate verifies against CA."
+    chk1_det="portal.key mode 0600 and portal.crt signed by CA."
 else
-    chk1_det="key_mode=${key_mode} (expected 600), cert_verifies=${cert_verify}"
+    chk1_det="key_mode=${key_mode}, cert_verifies=${cert_verify}"
 fi
 
 # Check 2: SAN contains DNS:portal.lab.internal
@@ -35,9 +35,9 @@ openssl x509 -in /etc/ssl/lab-portal/portal.crt -noout -text 2>/dev/null | grep 
 
 if [ "$san_check" = true ]; then
     chk2_pass=true
-    chk2_det="Certificate contains SAN DNS:portal.lab.internal."
+    chk2_det="SAN DNS:portal.lab.internal present."
 else
-    chk2_det="SAN DNS:portal.lab.internal not found in certificate."
+    chk2_det="Missing SAN DNS:portal.lab.internal."
 fi
 
 # Check 3: CA installed in trust store and nginx active
@@ -55,7 +55,7 @@ systemctl is-active nginx.service >/dev/null 2>&1 && nginx_active=true
 
 if [ "$ca_installed" = true ] && [ "$ca_match" = true ] && [ "$nginx_active" = true ]; then
     chk3_pass=true
-    chk3_det="lab-ca.crt installed and matches, nginx.service is active."
+    chk3_det="lab-ca.crt installed and nginx.service active."
 else
     chk3_det="ca_installed=${ca_installed}, ca_matches=${ca_match}, nginx_active=${nginx_active}"
 fi
@@ -64,13 +64,12 @@ fi
 curl_result=$(curl -fsS --max-time 3 https://portal.lab.internal:18450/ 2>/dev/null || echo "CURL_FAILED")
 if echo "$curl_result" | grep -q '"trusted"'; then
     chk4_pass=true
-    chk4_det="curl returned HTTP 200 with trusted content."
+    chk4_det="HTTPS request trusted without -k."
 else
     safe_curl=$(printf '%s' "$curl_result" | tr -d '\r\n"\\' | head -c 120)
-    chk4_det="curl result: ${safe_curl}"
+    chk4_det="curl=${safe_curl}"
 fi
 
-# Calculate score
 score_passed=0
 [ "$chk1_pass" = true ] && score_passed=$((score_passed + 1))
 [ "$chk2_pass" = true ] && score_passed=$((score_passed + 1))

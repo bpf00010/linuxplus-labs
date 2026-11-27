@@ -1,0 +1,16 @@
+id: "lab-19"
+slug: "lab-19-packages-dpkg-apt"
+title: "APT Sources, Holds, and DPKG"
+distro_name: "lplab-19"
+base_image: "ubuntu-24.04"
+student_user: "sysadmin"
+difficulty: "intermediate"
+estimated_minutes: 20
+xk0_006_domains:
+  - "system_management"
+  - "troubleshooting"
+objectives:
+  - "Fix or remove /etc/apt/sources.list.d/broken-internal.list so apt-get check succeeds"
+  - "Remove the package hold on jq"
+  - "Install /var/tmp/lplab-tool_1.0_all.deb with dpkg"
+  - "Write the package owning /usr/bin/curl to /var/tmp/curl-owner.txt"

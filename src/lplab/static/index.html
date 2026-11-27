@@ -1146,7 +1146,7 @@
       <!-- Empty state when no lab is selected -->
       <div class="detail-empty" id="detail-empty-view">
         <div style="font-size:14px; font-weight:700;">[NO LAB SELECTED]</div>
-        <p style="font-size:12px; color:var(--text-muted); max-width:320px;">Select any CompTIA Linux+ lab from the left sidebar to view work orders, launch terminal, or run automated verification tests.</p>
+        <p style="font-size:12px; color:var(--text-muted); max-width:320px;">Select a lab on the left to view tasks, launch a terminal, or run checks.</p>
       </div>
 
       <!-- Active Lab View -->
@@ -1181,13 +1181,13 @@
         <!-- Tab Bar -->
         <div class="tab-bar">
           <button class="tab-btn active" id="tab-btn-workorder" onclick="switchTab('workorder')">
-            WORK ORDER
+            TASKS
           </button>
           <button class="tab-btn" id="tab-btn-verify" onclick="switchTab('verify')">
-            ACCEPTANCE CRITERIA & VERIFICATION <span class="tab-badge" id="tab-verify-badge" style="display:none;">-</span>
+            CHECKS <span class="tab-badge" id="tab-verify-badge" style="display:none;">-</span>
           </button>
           <button class="tab-btn" id="tab-btn-logs" onclick="switchTab('logs')">
-            LIVE LOGS <span class="tab-badge" id="tab-logs-count">0</span>
+            LOGS <span class="tab-badge" id="tab-logs-count">0</span>
           </button>
         </div>
 
@@ -1308,7 +1308,7 @@
   <div class="modal-overlay" id="modal-generate">
     <div class="modal-card">
       <div class="modal-header">
-        <div class="modal-title">GENERATE COMPTIA LINUX+ AI LAB</div>
+        <div class="modal-title">NEW AI LAB</div>
         <button class="modal-close" onclick="closeGenerateModal()">[X]</button>
       </div>
       <div class="modal-body">
@@ -1317,7 +1317,7 @@
           <button class="btn-link" onclick="openAISettingsModal()">[Edit AI Settings]</button>
         </div>
         <div class="form-group">
-          <label class="form-label" for="gen-domain">XK0-006 OBJECTIVE DOMAIN</label>
+          <label class="form-label" for="gen-domain">EXAM DOMAIN</label>
           <select class="form-control" id="gen-domain">
             <option value="system_management">1.0 System Management</option>
             <option value="services_and_users">2.0 Services & Users</option>
@@ -1327,11 +1327,11 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label" for="gen-topic">SCENARIO TOPIC / CHALLENGE CONCEPT</label>
+          <label class="form-label" for="gen-topic">TOPIC</label>
           <input type="text" class="form-control" id="gen-topic" placeholder="e.g. storage-repair, dns-troubleshoot, pam-hardening" value="systemd-storage-repair">
         </div>
         <div class="form-group">
-          <label class="form-label" for="gen-distro">BASE LINUX DISTRIBUTION</label>
+          <label class="form-label" for="gen-distro">DISTRO</label>
           <select class="form-control" id="gen-distro">
             <option value="ubuntu-24.04" selected>Ubuntu 24.04 LTS (Debian-based Default)</option>
             <option value="rockylinux-9">Rocky Linux 9 (RHEL-compatible)</option>
@@ -1761,15 +1761,15 @@
       } else {
         summaryHtml = `
           <div style="text-align:center; padding:24px; color:var(--text-muted); font-family:var(--font-mono); font-size:12px; border:1px solid var(--border-default); background:var(--bg-surface);">
-            NO VERIFICATION RUNS RECORDED YET FOR ${lab.id.toUpperCase()}<br>
-            <span style="color:var(--text-secondary);">Click VERIFY above to execute automated non-destructive validation tests.</span>
+            NO CHECKS RUN YET FOR ${lab.id.toUpperCase()}<br>
+            <span style="color:var(--text-secondary);">Click VERIFY above to run automated checks.</span>
           </div>
         `;
       }
 
       container.innerHTML = `
         <div class="section-box">
-          <div class="section-title">ACCEPTANCE CRITERIA / OBJECTIVES (XK0-006)</div>
+          <div class="section-title">OBJECTIVES</div>
           <ul class="objectives-list">
             ${objItemsHtml}
           </ul>

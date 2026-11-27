@@ -2,19 +2,19 @@
 # Non-destructive, idempotent verification script emitting strict JSON to stdout
 
 chk1_pass=false
-chk1_desc="main is checked out, working tree clean, feature/alert-fix merged, config.env has TIMEOUT=60 with no conflict markers"
+chk1_desc="Is main checked out, clean, merged with feature/alert-fix, and does config.env have TIMEOUT=60?"
 chk1_det=""
 
 chk2_pass=false
-chk2_desc=".env.secrets is in .gitignore and NOT tracked by Git"
+chk2_desc="Is .env.secrets listed in .gitignore and untracked by Git?"
 chk2_det=""
 
 chk3_pass=false
-chk3_desc=".git/hooks/pre-commit exists, is executable, passes bash -n, and references bash -n"
+chk3_desc="Is .git/hooks/pre-commit executable, valid under bash -n, and checking staged scripts with bash -n?"
 chk3_det=""
 
 chk4_pass=false
-chk4_desc="Annotated tag v1.0.0 exists and points at main HEAD"
+chk4_desc="Does annotated tag v1.0.0 exist and point to main HEAD?"
 chk4_det=""
 
 cd /srv/ops-scripts 2>/dev/null || { echo '{"lab_id":"lab-10","passed":false,"score_passed":0,"score_total":4,"checks":[]}'; exit 1; }
@@ -34,7 +34,7 @@ grep -qE '^(<<<<<<<|=======|>>>>>>>)' config.env 2>/dev/null && no_markers=false
 
 if [ "$current_branch" = "main" ] && [ "$tree_clean" = true ] && [ "$merged" = true ] && [ "$has_timeout60" = true ] && [ "$no_markers" = true ]; then
     chk1_pass=true
-    chk1_det="main is checked out, tree is clean, feature/alert-fix is merged, TIMEOUT=60 set, no conflict markers."
+    chk1_det="main clean, feature/alert-fix merged, TIMEOUT=60."
 else
     chk1_det="branch=${current_branch}, clean=${tree_clean}, merged=${merged}, timeout60=${has_timeout60}, no_markers=${no_markers}"
 fi
@@ -48,7 +48,7 @@ not_tracked=false
 
 if [ "$in_gitignore" = true ] && [ "$not_tracked" = true ]; then
     chk2_pass=true
-    chk2_det=".env.secrets is listed in .gitignore and is not tracked by Git."
+    chk2_det=".env.secrets ignored and untracked."
 else
     chk2_det="in_gitignore=${in_gitignore}, not_tracked=${not_tracked}"
 fi
@@ -69,9 +69,9 @@ fi
 
 if [ "$hook_exists" = true ] && [ "$hook_exec" = true ] && [ "$hook_syntax" = true ] && [ "$hook_refs_bashn" = true ]; then
     chk3_pass=true
-    chk3_det="pre-commit hook exists, is executable, passes bash -n, and references bash -n."
+    chk3_det="pre-commit hook valid and executable."
 else
-    chk3_det="exists=${hook_exists}, executable=${hook_exec}, syntax_ok=${hook_syntax}, refs_bashn=${hook_refs_bashn}"
+    chk3_det="exists=${hook_exists}, exec=${hook_exec}, syntax=${hook_syntax}, bash_n=${hook_refs_bashn}"
 fi
 
 # Check 4: annotated tag v1.0.0 exists and points at main
@@ -85,12 +85,11 @@ fi
 
 if [ "$tag_type" = "tag" ] && [ "$tag_points_main" = true ]; then
     chk4_pass=true
-    chk4_det="Annotated tag v1.0.0 exists and points at main HEAD."
+    chk4_det="Annotated tag v1.0.0 points to main HEAD."
 else
-    chk4_det="tag_type=${tag_type} (expected 'tag'), points_at_main=${tag_points_main}"
+    chk4_det="tag_type=${tag_type}, points_at_main=${tag_points_main}"
 fi
 
-# Calculate score
 score_passed=0
 [ "$chk1_pass" = true ] && score_passed=$((score_passed + 1))
 [ "$chk2_pass" = true ] && score_passed=$((score_passed + 1))

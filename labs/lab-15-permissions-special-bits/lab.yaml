@@ -1,0 +1,16 @@
+id: "lab-15"
+slug: "lab-15-permissions-special-bits"
+title: "File Permissions, Special Bits, and Links"
+distro_name: "lplab-15"
+base_image: "ubuntu-24.04"
+student_user: "sysadmin"
+difficulty: "beginner"
+estimated_minutes: 20
+xk0_006_domains:
+  - "security"
+  - "system_management"
+objectives:
+  - "Remove SUID bit from /usr/local/bin/legacy-helper (mode 0755)"
+  - "Set /srv/dropbox group to devteam with SGID and Sticky Bit (3770 or 3775)"
+  - "Point symlink /srv/app/current.conf to /srv/app/config.v2 and hard-link /srv/app/readme.hard to /srv/app/readme.txt"
+  - "Set umask 0027 in /home/dev1/.bashrc and remove umask 0000"

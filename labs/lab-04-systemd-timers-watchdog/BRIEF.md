@@ -1,49 +1,13 @@
-# Work Order: Automate Service Watchdog with Systemd Timers and Logging
+# Lab 04: Systemd Timer Watchdog Migration
 
-**Incident Ticket:** INC-84021  
-**Target Host:** `lplab-04` (Ubuntu 24.04 LTS)  
-**Assigned Student:** `sysadmin` (password: `linuxplus`)  
+**Distro:** Ubuntu 24.04 | **Login:** `sysadmin` / `linuxplus`
+**Exam Focus:** Automation, System Management — bash scripts, systemd timers, logger, cron
 
----
+## Goal
+A broken legacy cron job at `/etc/cron.d/metrics-watchdog` fails to monitor `metrics-collector.service`. Replace it with a Bash watchdog script and a systemd timer.
 
-## Scenario Description
-
-The infrastructure team reported that `metrics-collector.service` periodically terminates during burst traffic. A legacy cron job was previously placed at `/etc/cron.d/metrics-watchdog` to monitor and restart it, but the job is failing silently and lacks auditing integration.
-
-The department standard requires all periodic monitoring and recovery automation to use native **systemd timer** and **service** units with direct output streaming to `journald`.
-
----
-
-## Tasks & Acceptance Criteria
-
-1. **Watchdog Recovery Script:**
-   - Create an executable Bash script at `/usr/local/bin/metrics-watchdog.sh` (mode `0755`, owned by `root:root`).
-   - The script must check whether `metrics-collector.service` is actively running.
-   - If the service is NOT active, the script must:
-     - Restart or start `metrics-collector.service`.
-     - Log an audit message containing `"metrics-collector restarted"` to journald via `logger -t metrics-watchdog`.
-   - The script must pass `bash -n` validation.
-
-2. **Systemd Service & Timer Units:**
-   - Create `/etc/systemd/system/metrics-watchdog.service`:
-     - Type: `oneshot`
-     - ExecStart: `/usr/local/bin/metrics-watchdog.sh`
-   - Create `/etc/systemd/system/metrics-watchdog.timer`:
-     - Configured to trigger every 1 minute (`OnUnitActiveSec=1min` or `OnCalendar=minutely` or `OnCalendar=*:0/1`).
-     - Installed into `timers.target`.
-   - Reload systemd and enable and start `metrics-watchdog.timer` (`systemctl enable --now metrics-watchdog.timer`).
-
-3. **Legacy Decommission:**
-   - Remove the unmanaged legacy cron job `/etc/cron.d/metrics-watchdog`.
-
-4. **Collector Service Health:**
-   - Ensure `metrics-collector.service` is enabled and actively running.
-
----
-
-## Verification
-
-Run verification in the desktop dashboard or via terminal:
-```bash
-lplab verify lab-04
-```
+## Tasks
+1. Create executable `/usr/local/bin/metrics-watchdog.sh` (`0755`, passes `bash -n`) that checks `metrics-collector.service` and starts it (and logs via `logger -t metrics-watchdog`) if inactive.
+2. Create `/etc/systemd/system/metrics-watchdog.service` (`Type=oneshot`) and `/etc/systemd/system/metrics-watchdog.timer` (runs every minute), then enable and start `metrics-watchdog.timer`.
+3. Remove `/etc/cron.d/metrics-watchdog`.
+4. Enable `metrics-collector.service` and confirm `/usr/local/bin/metrics-watchdog.sh` restores it to `active` when stopped.

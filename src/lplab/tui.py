@@ -182,12 +182,12 @@ class GenerateModal(ModalScreen[Optional[Tuple[str, str, str]]]):
 
     def compose(self) -> ComposeResult:
         yield Vertical(
-            Label("[bold white]GENERATE COMPTIA LINUX+ AI LAB[/bold white]\n"),
+            Label("[bold white]NEW AI LAB[/bold white]\n"),
             Label("[dim]Domain:[/dim]"),
             Select(self.DOMAINS, value="system_management", id="select-domain", classes="form-item"),
-            Label("[dim]Topic / Scenario Concept:[/dim]"),
-            Input(placeholder="e.g. LVM snapshot volume recovery or SSH hardening", id="input-topic", classes="form-item"),
-            Label("[dim]Base Distro:[/dim]"),
+            Label("[dim]Topic:[/dim]"),
+            Input(placeholder="e.g. LVM snapshot recovery or SSH hardening", id="input-topic", classes="form-item"),
+            Label("[dim]Distro:[/dim]"),
             Select(self.IMAGES, value="rockylinux-9", id="select-image", classes="form-item"),
             Horizontal(
                 Button("Cancel", variant="default", id="btn-cancel"),
@@ -416,15 +416,15 @@ class LabEngineApp(App):
                     yield Button("New Lab [g]", variant="default", id="btn-action-generate")
                 yield Static("STATUS: IDLE", id="job-status-strip")
                 with TabbedContent(initial="tab-brief", id="tabbed-content"):
-                    with TabPane("Work Order", id="tab-brief"):
+                    with TabPane("Tasks", id="tab-brief"):
                         with VerticalScroll(id="brief-scroll"):
                             yield Static(id="lab-meta-box")
                             yield Static(id="acceptance-criteria-box")
                             yield Markdown(id="work-order-markdown")
-                    with TabPane("Acceptance Criteria & Verification", id="tab-verify"):
+                    with TabPane("Checks", id="tab-verify"):
                         with VerticalScroll(id="verify-scroll"):
                             yield Static(id="verify-content")
-                    with TabPane("Live Logs", id="tab-logs"):
+                    with TabPane("Logs", id="tab-logs"):
                         yield RichLog(id="log-view", auto_scroll=True, wrap=True, markup=False)
         yield Footer()
 
@@ -598,36 +598,36 @@ class LabEngineApp(App):
         # 1. Update Header Banner
         self.update_header_banner()
 
-        # 2. Update Lab Meta Box in Work Order Tab
+        # 2. Update Lab Info Box in Tasks Tab
         try:
             meta_box = self.query_one("#lab-meta-box", Static)
             domains_str = ", ".join(m.xk0_006_domains) if m.xk0_006_domains else "General"
             meta_box.update(
-                f"[bold #2f6feb]LAB METADATA[/bold #2f6feb]\n"
+                f"[bold #2f6feb]LAB INFO[/bold #2f6feb]\n"
                 f"[bold #e6edf3]{m.id.upper()}: {m.title}[/bold #e6edf3]\n"
-                f"[#9ba7b4]Target Distro:[/#9ba7b4] [#e6edf3]{m.distro_name}[/#e6edf3]  |  "
-                f"[#9ba7b4]Base Image:[/#9ba7b4] [#e6edf3]{m.base_image}[/#e6edf3]  |  "
+                f"[#9ba7b4]Distro:[/#9ba7b4] [#e6edf3]{m.distro_name}[/#e6edf3]  |  "
+                f"[#9ba7b4]Base:[/#9ba7b4] [#e6edf3]{m.base_image}[/#e6edf3]  |  "
                 f"[#9ba7b4]Difficulty:[/#9ba7b4] [#e6edf3]{m.difficulty.upper()}[/#e6edf3]  |  "
                 f"[#9ba7b4]Domains:[/#9ba7b4] [#e6edf3]{domains_str}[/#e6edf3]  |  "
-                f"[#9ba7b4]Est. Time:[/#9ba7b4] [#e6edf3]{m.estimated_minutes}m[/#e6edf3]"
+                f"[#9ba7b4]Time:[/#9ba7b4] [#e6edf3]{m.estimated_minutes}m[/#e6edf3]"
             )
         except (NoMatches, Exception):
             pass
 
-        # 3. Update Acceptance Criteria Box in Work Order Tab
+        # 3. Update Objectives Box in Tasks Tab
         try:
             crit_box = self.query_one("#acceptance-criteria-box", Static)
-            lines = ["[bold #2f6feb]ACCEPTANCE CRITERIA & REQUIREMENTS (XK0-006):[/bold #2f6feb]"]
+            lines = ["[bold #2f6feb]OBJECTIVES:[/bold #2f6feb]"]
             if m.objectives:
                 for idx, obj in enumerate(m.objectives, 1):
                     lines.append(f"  [bold #2f6feb][{idx}][/bold #2f6feb] [#e6edf3]{obj}[/#e6edf3]")
             else:
-                lines.append("  [#6e7b8b]No explicit objectives listed in manifest.[/#6e7b8b]")
+                lines.append("  [#6e7b8b]No objectives listed.[/#6e7b8b]")
             crit_box.update("\n".join(lines))
         except (NoMatches, Exception):
             pass
 
-        # 4. Update Work Order Markdown
+        # 4. Update Tasks Markdown
         try:
             brief_file = p / "BRIEF.md"
             content = brief_file.read_text(encoding="utf-8") if brief_file.is_file() else "# No Brief Found"
@@ -636,19 +636,19 @@ class LabEngineApp(App):
         except (NoMatches, Exception):
             pass
 
-        # 5. Update Acceptance Criteria & Verification Tab
+        # 5. Update Checks Tab
         try:
             verify_widget = self.query_one("#verify-content", Static)
             sections = []
-            sections.append("[bold #2f6feb]ACCEPTANCE CRITERIA / OBJECTIVES (XK0-006):[/bold #2f6feb]\n")
+            sections.append("[bold #2f6feb]OBJECTIVES:[/bold #2f6feb]\n")
             if m.objectives:
                 for idx, obj in enumerate(m.objectives, 1):
                     sections.append(f"  [{idx}] {obj}")
             else:
-                sections.append("  [#6e7b8b]No explicit objectives listed in manifest.[/#6e7b8b]")
+                sections.append("  [#6e7b8b]No objectives listed.[/#6e7b8b]")
             sections.append("")
 
-            sections.append("[bold #2f6feb]VERIFICATION STATUS & CHECK BREAKDOWN:[/bold #2f6feb]\n")
+            sections.append("[bold #2f6feb]CHECKS:[/bold #2f6feb]\n")
             if record and record.last_verified:
                 badge = self.format_badge(record.status, record, rich=True)
                 sections.append(f"  Status: {badge}")
@@ -661,11 +661,11 @@ class LabEngineApp(App):
                         if chk.details:
                             sections.append(f"         [#6e7b8b]{chk.details}[/#6e7b8b]")
                     sections.append("")
-                sections.append("[#9ba7b4]Press 'v' or click Verify [v] to re-run automated checks.[/#9ba7b4]")
+                sections.append("[#9ba7b4]Press 'v' or click Verify [v] to re-run checks.[/#9ba7b4]")
             else:
                 sections.append(
-                    f"  No verification run recorded yet for {m.id}.\n\n"
-                    "  Press 'v' or click Verify [v] to execute non-destructive automated checks."
+                    f"  No checks run yet for {m.id}.\n\n"
+                    "  Press 'v' or click Verify [v] to run checks."
                 )
 
             verify_widget.update("\n".join(sections))

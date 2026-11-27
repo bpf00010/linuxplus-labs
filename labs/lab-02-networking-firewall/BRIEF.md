@@ -1,22 +1,16 @@
-# IT Support Work Order: TICKET-9044
+# Lab 02: Fix Nginx, Hosts, and Firewall
 
-**Assigned Host:** `ubuntu-gateway-01` (`ubuntu-24.04`)  
-**Priority:** High  
-**Classification:** Incident / Network & Service Connectivity  
+**Distro:** Ubuntu 24.04 | **Login:** `sysadmin` / `linuxplus`
+**Exam Focus:** Services, Security, Troubleshooting — nginx, /etc/hosts, nftables, curl
 
----
+## Goal
+`http://api.lab.internal:18080/health` is unreachable due to an Nginx config syntax error, a wrong `/etc/hosts` IP, and a firewall drop rule in `table inet lplab02`.
 
-### Incident Summary
-Internal integration testing against the local microservice API gateway (`http://api.lab.internal:18080/health`) is failing. Automated health checkers report connection timeouts, and the reverse proxy service appears stopped or failing to reload.
+## Tasks
+1. Fix the syntax error in `/etc/nginx/sites-available/internal-api`, confirm `nginx -t` passes, and start `nginx`.
+2. Update `/etc/hosts` so `api.lab.internal` maps to `127.0.0.1`.
+3. Remove the TCP port `18080` drop rule from nftables `table inet lplab02`.
+4. Confirm `curl -fsS http://api.lab.internal:18080/health` returns HTTP 200 with `"status":"healthy"`.
 
-### Reported Symptoms & Constraints
-1. **Web Server Failure:** The Nginx reverse proxy service cannot be started or reloaded. Configuration syntax checks report an error within site definitions.
-2. **Firewall Filter Block:** A scoped packet-filtering table (`table inet lplab02`) has a policy dropping traffic destined for the application port TCP 18080.
-   > **Important Safety Notice:** WSL2 instances share a single kernel network namespace. Do NOT execute global firewall flushes (`nft flush ruleset` or `iptables -F`). Only manage the dedicated `inet lplab02` table.
-3. **Local Resolution Mismatch:** The hostname `api.lab.internal` does not map to the primary loopback interface `127.0.0.1` in `/etc/hosts`.
-
-### Acceptance Criteria
-- `nginx -t` must pass without errors, and `nginx` service must be active and running under systemd.
-- `/etc/hosts` must map `api.lab.internal` directly to `127.0.0.1`.
-- The dedicated `table inet lplab02` firewall table must remain present and active, but must permit inbound traffic on TCP port 18080.
-- Executing `curl -fsS http://api.lab.internal:18080/health` must succeed and return HTTP 200 with the payload `{"status":"healthy","service":"internal-api"}`.
+## Rules
+- Do not delete `table inet lplab02` or run `nft flush ruleset` or `iptables -F`.

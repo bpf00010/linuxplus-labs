@@ -137,27 +137,45 @@ powershell -ExecutionPolicy Bypass -File .\create_shortcut.ps1
 
 ---
 
-## Included Hands-On Labs (XK0-006)
+## CompTIA Linux+ (XK0-006) Coverage Matrix
 
-| Lab ID | Distro | Objective Focus | Scenario Highlights |
+| Domain | Labs | Key Exam Skills |
+|---|---|---|
+| **1.0 System Management** | **lab-01** (Rocky 9), **lab-09** (Rocky 9), **lab-12** (Ubu 24), **lab-17** (Ubu 24), **lab-19** (Ubu 24) | `fstab`, `.mount` units, `resize2fs`, `logrotate`, `tar`/`rsync`/checksums, `nice`/`ps`, `cron`, `dpkg`/`apt-mark` |
+| **2.0 Services & Users** | **lab-02** (Ubu 24), **lab-06** (Ubu 24), **lab-16** (Ubu 24) | `nginx`, `/etc/hosts`, `systemd`, `/etc/skel`, `useradd`/`usermod`/`chage`, `/etc/security/limits.d/` |
+| **3.0 Security** | **lab-03** (Rocky 9), **lab-07** (Ubu 24), **lab-11** (Ubu 24), **lab-15** (Ubu 24) | `setgid`, POSIX ACLs, `visudo`, `sshd_config`, `.ssh` modes, CA/CSR/SAN, `chmod`/SUID/sticky bit, `umask` |
+| **4.0 Automation & Scripting** | **lab-04** (Ubu 24), **lab-10** (Ubu 24), **lab-13** (Ubu 24), **lab-18** (Ubu 24) | `systemd` timers & `logger`, Git merge/tags/hooks, Ansible playbooks & templates, `grep`/`awk`/`sed`/`find`/Bash |
+| **5.0 Troubleshooting** | **lab-05** (Ubu 24), **lab-08** (Ubu 24), **lab-14** (Ubu 24) | `ip netns`/`veth`/routes/`nftables`, cgroup `MemoryMax`/`LimitNOFILE`, `sysctl`, `dnsmasq`/`dig`, socket activation, log analysis |
+
+<details>
+<summary>All 19 Labs Quick Reference</summary>
+
+| Lab | Distro | Title | Level |
 |---|---|---|---|
-| **lab-01** | Rocky Linux 9 | System Management, Troubleshooting | Corrupted `/etc/fstab` loop mount, masked service, logrotate limits |
-| **lab-02** | Ubuntu 24.04 | Networking, Firewall, Services | Broken Nginx config, incorrect `/etc/hosts`, scoped nftables drop rule |
-| **lab-03** | Rocky Linux 9 | Security, Access Controls | Shared directory permissions (`setgid`, POSIX ACLs), least-privilege sudo |
-| **lab-04** | Ubuntu 24.04 | Automation, Scripting, Systemd | Migrate broken legacy cron to `systemd` oneshot service & active timer |
-| **lab-05** | Ubuntu 24.04 | Troubleshooting, Systemd, Security | Multi-namespace `veth` routing, default gateway, and scoped `nftables` |
-| **lab-06** | Ubuntu 24.04 | Services, Security, Troubleshooting | Identify port conflict, harden TLS keys (`0600`), and fix Nginx upstream |
-| **lab-07** | Ubuntu 24.04 | Security, Services and Users | Harden OpenSSH daemon, `AllowGroups sshusers`, `.ssh` permissions, `chage` |
-| **lab-08** | Ubuntu 24.04 | Troubleshooting, System Management | Fix cgroup `MemoryMax` & `LimitNOFILE` drop-ins, mask runaway logger, `sysctl` |
-| **lab-09** | Rocky Linux 9 | System Management, Troubleshooting | Expand loop disk image, `resize2fs`, and harden systemd `.mount` unit |
-| **lab-10** | Ubuntu 24.04 | Automation, Security | Git merge conflicts, secret removal from tracking, pre-commit hooks, annotated tags |
-| **lab-11** | Ubuntu 24.04 | Security, Services, Troubleshooting | PKI CA trust chain, CSR with SAN, Nginx TLS certificate repair |
-| **lab-12** | Ubuntu 24.04 | System Management, Security | Backup restore from tarball, rsync with exclusions, checksum verification |
-| **lab-13** | Ubuntu 24.04 | Automation, Services, System Mgmt | Fix broken Ansible playbook, deploy systemd service, verify idempotency |
-| **lab-14** | Ubuntu 24.04 | Troubleshooting, Services, Scripting | DNS `dnsmasq` repair, systemd socket activation, HTTP log forensics |
+| **lab-01** | Rocky Linux 9 | Fix Broken Mount and Service | Intermediate |
+| **lab-02** | Ubuntu 24.04 | Fix Nginx, Hosts, and Firewall | Intermediate |
+| **lab-03** | Rocky Linux 9 | Shared Directory ACLs and Sudoers | Advanced |
+| **lab-04** | Ubuntu 24.04 | Systemd Timer Watchdog Migration | Intermediate |
+| **lab-05** | Ubuntu 24.04 | Network Namespace Routing and Firewall | Intermediate |
+| **lab-06** | Ubuntu 24.04 | Nginx TLS and Port Conflict | Intermediate |
+| **lab-07** | Ubuntu 24.04 | SSH and Password Hardening | Intermediate |
+| **lab-08** | Ubuntu 24.04 | Systemd Cgroups and Sysctl Tuning | Advanced |
+| **lab-09** | Rocky Linux 9 | Systemd Mount and Filesystem Resize | Advanced |
+| **lab-10** | Ubuntu 24.04 | Git Merge, Secrets, and Hooks | Intermediate |
+| **lab-11** | Ubuntu 24.04 | Local CA Trust and Nginx TLS | Intermediate |
+| **lab-12** | Ubuntu 24.04 | Tar Restore, Rsync, and Checksums | Intermediate |
+| **lab-13** | Ubuntu 24.04 | Fix Ansible Playbook and Service | Advanced |
+| **lab-14** | Ubuntu 24.04 | DNS, Socket Activation, and Logs | Advanced |
+| **lab-15** | Ubuntu 24.04 | File Permissions, Special Bits, and Links | Beginner |
+| **lab-16** | Ubuntu 24.04 | Users, Groups, Skel, and Limits | Beginner |
+| **lab-17** | Ubuntu 24.04 | Processes, Nice Priority, and Cron | Intermediate |
+| **lab-18** | Ubuntu 24.04 | Text Processing, Find, and Scripting | Intermediate |
+| **lab-19** | Ubuntu 24.04 | APT Sources, Holds, and DPKG | Intermediate |
 
-> [!IMPORTANT]
-> **After upgrading to v0.4.0**, run `lplab build-image ubuntu-24.04 --force` once to rebuild the Ubuntu base image with newly required packages (`git`, `rsync`, `dnsmasq`, `ansible-core`, `python3-venv`, `gawk`, `socat`).
+</details>
+
+> [!NOTE]
+> Upgrading `lplab.exe` automatically refreshes unmodified seed labs in `%LOCALAPPDATA%\linuxplus-labs\labs\` while preserving any user-generated (`lab-20+`) or manually edited labs. If you previously ran v0.4.0, rebuild the Ubuntu base image once with `lplab build-image ubuntu-24.04 --force`.
 
 ---
 

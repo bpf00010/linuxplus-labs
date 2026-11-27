@@ -2,19 +2,19 @@
 # Non-destructive, idempotent verification script emitting strict JSON to stdout
 
 chk1_pass=false
-chk1_desc="legacy-stub.service is inactive and disabled"
+chk1_desc="Is legacy-stub.service stopped and disabled?"
 chk1_det=""
 
 chk2_pass=false
-chk2_desc="/etc/ssl/portal/portal.key is owned by root:root with mode 600"
+chk2_desc="Is /etc/ssl/portal/portal.key owned by root:root with mode 0600?"
 chk2_det=""
 
 chk3_pass=false
-chk3_desc="nginx -t passes validation and nginx.service is active and enabled"
+chk3_desc="Does nginx -t pass and is nginx.service enabled and active?"
 chk3_det=""
 
 chk4_pass=false
-chk4_desc="Endpoint https://127.0.0.1:18443/ returns HTTP 200 containing healthy"
+chk4_desc="Does https://127.0.0.1:18443/ return HTTP 200 healthy?"
 chk4_det=""
 
 # Check 1: legacy-stub stopped and disabled
@@ -31,9 +31,9 @@ fi
 
 if [ "$stub_active" = false ] && [ "$stub_enabled" = false ]; then
     chk1_pass=true
-    chk1_det="legacy-stub.service is successfully stopped and disabled."
+    chk1_det="legacy-stub.service is stopped and disabled."
 else
-    chk1_det="legacy-stub status: active=${stub_active}, enabled=${stub_enabled}"
+    chk1_det="active=${stub_active}, enabled=${stub_enabled}"
 fi
 
 # Check 2: TLS key permissions and ownership
@@ -48,9 +48,9 @@ fi
 
 if [ "$owner" = "root:root" ] && [ "$mode" = "600" ]; then
     chk2_pass=true
-    chk2_det="Private key ${key_path} is securely owned by root:root with mode 600."
+    chk2_det="${key_path} is root:root mode 600."
 else
-    chk2_det="Private key status: owner=${owner}, mode=${mode} (expected root:root, 600)"
+    chk2_det="owner=${owner}, mode=${mode} (expected root:root, 600)"
 fi
 
 # Check 3: Nginx syntax and service status
@@ -72,9 +72,9 @@ fi
 
 if [ "$nginx_syntax" = true ] && [ "$nginx_active" = true ] && [ "$nginx_enabled" = true ]; then
     chk3_pass=true
-    chk3_det="Nginx configuration passes syntax test and service is enabled and active."
+    chk3_det="nginx -t passed and nginx.service is enabled and active."
 else
-    chk3_det="Nginx: syntax=${nginx_syntax}, active=${nginx_active}, enabled=${nginx_enabled}"
+    chk3_det="syntax=${nginx_syntax}, active=${nginx_active}, enabled=${nginx_enabled}"
 fi
 
 # Check 4: HTTPS request to reverse proxy
@@ -89,12 +89,11 @@ fi
 
 if [ "$curl_ok" = true ]; then
     chk4_pass=true
-    chk4_det="HTTPS request to https://127.0.0.1:18443/ succeeded with response: ${http_out}"
+    chk4_det="HTTPS proxy returned HTTP 200 healthy."
 else
-    chk4_det="Failed to retrieve HTTP 200 with 'healthy' from https://127.0.0.1:18443/"
+    chk4_det="Request to https://127.0.0.1:18443/ failed."
 fi
 
-# Calculate score
 score_passed=0
 [ "$chk1_pass" = true ] && score_passed=$((score_passed + 1))
 [ "$chk2_pass" = true ] && score_passed=$((score_passed + 1))

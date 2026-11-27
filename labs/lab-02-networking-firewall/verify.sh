@@ -2,19 +2,19 @@
 # Non-destructive, idempotent verification script emitting strict JSON to stdout
 
 chk1_pass=false
-chk1_desc="Nginx configuration is valid and service is active"
+chk1_desc="Does nginx -t pass and is nginx.service active?"
 chk1_det=""
 
 chk2_pass=false
-chk2_desc="/etc/hosts resolves api.lab.internal to 127.0.0.1"
+chk2_desc="Does /etc/hosts map api.lab.internal to 127.0.0.1?"
 chk2_det=""
 
 chk3_pass=false
-chk3_desc="nftables table inet lplab02 exists and permits TCP port 18080"
+chk3_desc="Does nftables table inet lplab02 exist and allow TCP port 18080?"
 chk3_det=""
 
 chk4_pass=false
-chk4_desc="Endpoint http://api.lab.internal:18080/health returns HTTP 200 healthy"
+chk4_desc="Does http://api.lab.internal:18080/health return HTTP 200 healthy?"
 chk4_det=""
 
 # Check 1: Nginx syntax and service status
@@ -30,9 +30,9 @@ fi
 
 if [ "$nginx_syntax" = true ] && [ "$nginx_active" = true ]; then
     chk1_pass=true
-    chk1_det="Nginx syntax is valid and service is actively running."
+    chk1_det="nginx -t passed and nginx is active."
 else
-    chk1_det="Nginx status: syntax_ok=${nginx_syntax}, active=${nginx_active}"
+    chk1_det="syntax_ok=${nginx_syntax}, active=${nginx_active}"
 fi
 
 # Check 2: /etc/hosts mapping
@@ -43,9 +43,9 @@ fi
 
 if [ "$hosts_ok" = true ]; then
     chk2_pass=true
-    chk2_det="api.lab.internal is mapped to 127.0.0.1 in /etc/hosts."
+    chk2_det="api.lab.internal maps to 127.0.0.1 in /etc/hosts."
 else
-    chk2_det="api.lab.internal does not resolve to 127.0.0.1 in /etc/hosts."
+    chk2_det="api.lab.internal is not mapped to 127.0.0.1 in /etc/hosts."
 fi
 
 # Check 3: Scoped nftables table
@@ -54,7 +54,6 @@ drop_rule_absent=false
 
 if nft list table inet lplab02 >/dev/null 2>&1; then
     table_exists=true
-    # Verify drop rule for port 18080 is gone or disabled
     if ! nft list table inet lplab02 2>/dev/null | grep -E "tcp dport 18080 drop" >/dev/null 2>&1; then
         drop_rule_absent=true
     fi
@@ -62,9 +61,9 @@ fi
 
 if [ "$table_exists" = true ] && [ "$drop_rule_absent" = true ]; then
     chk3_pass=true
-    chk3_det="Table inet lplab02 is active and traffic on port 18080 is permitted."
+    chk3_det="table inet lplab02 exists and port 18080 is allowed."
 else
-    chk3_det="nftables status: table_exists=${table_exists}, drop_removed=${drop_rule_absent}"
+    chk3_det="table_exists=${table_exists}, drop_removed=${drop_rule_absent}"
 fi
 
 # Check 4: HTTP health endpoint
@@ -76,12 +75,11 @@ fi
 
 if [ "$curl_ok" = true ]; then
     chk4_pass=true
-    chk4_det="Health endpoint returned HTTP 200 with healthy payload."
+    chk4_det="Health endpoint returned HTTP 200 healthy."
 else
-    chk4_det="Failed to query http://api.lab.internal:18080/health."
+    chk4_det="Request to http://api.lab.internal:18080/health failed."
 fi
 
-# Calculate score
 score_passed=0
 [ "$chk1_pass" = true ] && score_passed=$((score_passed + 1))
 [ "$chk2_pass" = true ] && score_passed=$((score_passed + 1))
@@ -92,7 +90,6 @@ score_total=4
 overall_passed=false
 [ "$score_passed" -eq "$score_total" ] && overall_passed=true
 
-# Output strict JSON
 cat <<EOF
 {
   "lab_id": "lab-02",

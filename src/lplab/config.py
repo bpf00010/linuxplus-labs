@@ -1,5 +1,6 @@
 """Configuration and state persistence management for lplab."""
 
+import hashlib
 import json
 import os
 import shutil
@@ -76,34 +77,98 @@ def _expand_env_vars(data: Any) -> Any:
     return data
 
 
-def ensure_seed_labs_copied(bundled_labs_dir: Path, target_labs_dir: Path) -> None:
-    """Copy missing seed lab directories from bundled read-only labs into target labs dir.
+_SEED_HASHES_FILE = ".seed_hashes.json"
+_LEGACY_BRIEF_MARKERS = (
+    "# IT Support Work Order:",
+    "# Security Audit Remediation Ticket:",
+    "**Incident Ticket:**",
+    "## Scenario Description",
+)
 
-    Checks existing labs by ID (not just folder name) so upgrading lplab never creates duplicate IDs.
-    If an existing directory has the same ID under an old superseded folder name, cleans up the old
-    superseded directory and replaces it with the bundled version.
+
+def _sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _seed_files(lab_dir: Path) -> List[Path]:
+    return [f for f in lab_dir.iterdir() if f.is_file() and f.name != _SEED_HASHES_FILE]
+
+
+def _write_seed_hashes(seed_dir: Path, dest_dir: Path) -> None:
+    hashes = {f.name: _sha256_file(f) for f in _seed_files(seed_dir)}
+    (dest_dir / _SEED_HASHES_FILE).write_text(json.dumps(hashes, indent=2), encoding="utf-8")
+
+
+def _is_legacy_seed_brief(brief_path: Path) -> bool:
+    if not brief_path.is_file():
+        return False
+    try:
+        text = brief_path.read_text(encoding="utf-8")
+    except Exception:
+        return False
+    return any(marker in text for marker in _LEGACY_BRIEF_MARKERS)
+
+
+def _refresh_unmodified_seed_files(seed_dir: Path, dest_dir: Path) -> None:
+    hashes_file = dest_dir / _SEED_HASHES_FILE
+    if hashes_file.is_file():
+        try:
+            recorded = json.loads(hashes_file.read_text(encoding="utf-8"))
+        except Exception:
+            recorded = {}
+        for src in _seed_files(seed_dir):
+            dst = dest_dir / src.name
+            src_hash = _sha256_file(src)
+            if not dst.is_file():
+                shutil.copy2(src, dst)
+            elif dst.name in recorded and _sha256_file(dst) == recorded[dst.name] and src_hash != recorded[dst.name]:
+                shutil.copy2(src, dst)
+        _write_seed_hashes(seed_dir, dest_dir)
+    elif _is_legacy_seed_brief(dest_dir / "BRIEF.md"):
+        for src in _seed_files(seed_dir):
+            shutil.copy2(src, dest_dir / src.name)
+        _write_seed_hashes(seed_dir, dest_dir)
+
+
+def ensure_seed_labs_copied(bundled_labs_dir: Path, target_labs_dir: Path) -> None:
+    """Copy missing seed labs and refresh unmodified seed files in target_labs_dir.
+
+    Deduplicates labs by ID, removes superseded seed folders, and refreshes unmodified
+    seed labs (tracked via .seed_hashes.json or legacy BRIEF.md markers) without touching
+    user-generated labs or user-edited files.
     """
     if not bundled_labs_dir.is_dir():
         return
     target_labs_dir.mkdir(parents=True, exist_ok=True)
 
-    # Map existing target labs by ID
+    # Map existing target labs by ID and remove any duplicate folders sharing the same ID
     existing_by_id: Dict[str, Path] = {}
-    for sub in target_labs_dir.iterdir():
-        if sub.is_dir():
-            for m_name in ("lab.yaml", "manifest.yaml"):
-                mf = sub / m_name
-                if mf.is_file():
-                    try:
-                        with open(mf, "r", encoding="utf-8") as f:
-                            data = yaml.safe_load(f)
-                        if isinstance(data, dict) and "id" in data:
-                            existing_by_id[str(data["id"])] = sub
-                            break
-                    except Exception:
-                        pass
+    for sub in sorted(target_labs_dir.iterdir()):
+        if not sub.is_dir():
+            continue
+        for m_name in ("lab.yaml", "manifest.yaml"):
+            mf = sub / m_name
+            if mf.is_file():
+                try:
+                    with open(mf, "r", encoding="utf-8") as f:
+                        data = yaml.safe_load(f)
+                    if isinstance(data, dict) and "id" in data:
+                        lab_id = str(data["id"])
+                        if lab_id in existing_by_id:
+                            # Remove duplicate folder; prefer bundled folder name if one matches
+                            bundled_match = bundled_labs_dir / sub.name
+                            if bundled_match.is_dir() and not (bundled_labs_dir / existing_by_id[lab_id].name).is_dir():
+                                shutil.rmtree(existing_by_id[lab_id], ignore_errors=True)
+                                existing_by_id[lab_id] = sub
+                            else:
+                                shutil.rmtree(sub, ignore_errors=True)
+                        else:
+                            existing_by_id[lab_id] = sub
+                        break
+                except Exception:
+                    pass
 
-    for item in bundled_labs_dir.iterdir():
+    for item in sorted(bundled_labs_dir.iterdir()):
         if not item.is_dir():
             continue
         seed_manifest_file = item / "lab.yaml"
@@ -125,17 +190,16 @@ def ensure_seed_labs_copied(bundled_labs_dir: Path, target_labs_dir: Path) -> No
         if seed_id and seed_id in existing_by_id:
             old_dir = existing_by_id[seed_id]
             if old_dir.name != item.name:
-                # Old superseded seed directory found with the same lab ID (e.g. lab-04-automation-timers)
-                try:
-                    shutil.rmtree(old_dir, ignore_errors=True)
-                except Exception:
-                    pass
+                shutil.rmtree(old_dir, ignore_errors=True)
                 shutil.copytree(item, dest_lab_dir)
+                _write_seed_hashes(item, dest_lab_dir)
                 existing_by_id[seed_id] = dest_lab_dir
-            # Else already exists with matching ID and folder name; preserve user changes
+            else:
+                _refresh_unmodified_seed_files(item, dest_lab_dir)
         else:
             if not dest_lab_dir.exists():
                 shutil.copytree(item, dest_lab_dir)
+                _write_seed_hashes(item, dest_lab_dir)
                 if seed_id:
                     existing_by_id[seed_id] = dest_lab_dir
 

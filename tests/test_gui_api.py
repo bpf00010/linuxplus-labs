@@ -46,16 +46,16 @@ def test_get_root_serves_html_dashboard_without_cdns(client):
 
 
 def test_get_labs_returns_seed_labs(client):
-    """Verify GET /api/labs returns all 14 seed labs with expected schema, objectives, and runtime statuses."""
+    """Verify GET /api/labs returns all 19 seed labs with expected schema, objectives, and runtime statuses."""
     resp = client.get("/api/labs")
     assert resp.status_code == 200
     labs = resp.json()
     assert isinstance(labs, list)
-    assert len(labs) == 14
+    assert len(labs) == 19
 
     lab_ids = [l["id"] for l in labs]
-    for i in range(1, 15):
-        expected_id = f"lab-{i:02d}" if i < 10 else f"lab-{i}"
+    for i in range(1, 20):
+        expected_id = f"lab-{i:02d}"
         assert expected_id in lab_ids
 
     # Inspect lab-01 schema
@@ -69,9 +69,16 @@ def test_get_labs_returns_seed_labs(client):
     assert isinstance(lab01["objectives"], list)
     assert len(lab01["objectives"]) > 0
 
+    # Inspect new labs 15-19
+    for i in range(15, 20):
+        lab = next(l for l in labs if l["id"] == f"lab-{i:02d}")
+        assert lab["distro_name"] == f"lplab-{i:02d}"
+        assert lab["base_image"] == "ubuntu-24.04"
+        assert len(lab["objectives"]) == 4
+
 
 def test_get_lab_brief_returns_markdown_ticket(client):
-    """Verify GET /api/labs/lab-01/brief returns the raw BRIEF.md work order and manifest."""
+    """Verify GET /api/labs/lab-01/brief returns the simplified PBQ BRIEF.md and manifest."""
     resp = client.get("/api/labs/lab-01/brief")
     assert resp.status_code == 200
     data = resp.json()
@@ -79,9 +86,9 @@ def test_get_lab_brief_returns_markdown_ticket(client):
     assert "manifest" in data
     assert data["manifest"]["id"] == "lab-01"
     assert "brief_md" in data
-    # Check ticket content
-    assert "TICKET-8921" in data["brief_md"]
-    assert "Incident Summary" in data["brief_md"]
+    assert "# Lab 01:" in data["brief_md"]
+    assert "## Goal" in data["brief_md"]
+    assert "## Tasks" in data["brief_md"]
 
     # Verify 404 for unknown lab
     resp_404 = client.get("/api/labs/non-existent-lab-xyz/brief")
@@ -420,11 +427,11 @@ def test_ai_detect_and_models_endpoints(client):
 
 
 def test_zero_duplicate_labs_and_clean_sidebar(client):
-    """Verify all 14 labs are unique (no duplicate IDs or distro names), and sidebar is clean."""
+    """Verify all 19 labs are unique (no duplicate IDs or distro names), and sidebar/tab labels are clean."""
     resp = client.get("/api/labs")
     assert resp.status_code == 200
     labs = resp.json()
-    assert len(labs) == 14
+    assert len(labs) == 19
 
     # Strict uniqueness of IDs and distro names
     ids = [lab["id"] for lab in labs]
@@ -435,11 +442,14 @@ def test_zero_duplicate_labs_and_clean_sidebar(client):
     assert len(distro_names) == len(set(distro_names)), f"Duplicate distro names found: {distro_names}"
     assert len(slugs) == len(set(slugs)), f"Duplicate slugs found: {slugs}"
 
-    # Verify index.html does not contain the old domain tag badges in the lab item cards
+    # Verify index.html uses simplified tab labels and clean sidebar
     html = client.get("/").text
     assert "lab-domain-badge" not in html
     assert "card.dataset.id" in html
     assert "card.dataset.slug" in html
+    assert "TASKS" in html
+    assert "CHECKS" in html
+    assert "LOGS" in html
 
 
 def test_engine_discover_labs_deduplication(tmp_path):
@@ -502,6 +512,54 @@ objectives: [obj1]
     assert len(discovered) == 1
     assert discovered[0][0].id == "lab-04"
     assert discovered[0][0].slug in ("lab-04-primary", "lab-04-duplicate")
+
+
+def test_seed_labs_refresh_unmodified_and_preserve_custom(tmp_path):
+    """Verify ensure_seed_labs_copied upgrades unmodified/legacy seed labs while preserving edits & custom labs."""
+    from lplab.config import ensure_seed_labs_copied
+
+    bundled = tmp_path / "bundled"
+    target = tmp_path / "target"
+    bundled.mkdir()
+    target.mkdir()
+
+    # Bundled lab-01 (updated)
+    b1 = bundled / "lab-01-test"
+    b1.mkdir()
+    (b1 / "lab.yaml").write_text('id: "lab-01"\ntitle: "New Short Title"\n', encoding="utf-8")
+    (b1 / "BRIEF.md").write_text("# Lab 01: New Short Title\n", encoding="utf-8")
+
+    # Legacy cached lab-01 in target (from v0.4.0)
+    t1 = target / "lab-01-test"
+    t1.mkdir()
+    (t1 / "lab.yaml").write_text('id: "lab-01"\ntitle: "Old Long Title"\n', encoding="utf-8")
+    (t1 / "BRIEF.md").write_text("# IT Support Work Order: TICKET-8921\n## Scenario Description\n", encoding="utf-8")
+
+    # User-generated custom lab-20 in target
+    t20 = target / "lab-20-custom"
+    t20.mkdir()
+    (t20 / "lab.yaml").write_text('id: "lab-20"\ntitle: "My Custom Lab"\n', encoding="utf-8")
+    (t20 / "BRIEF.md").write_text("# Custom Brief\n", encoding="utf-8")
+
+    ensure_seed_labs_copied(bundled, target)
+
+    # Legacy seed lab refreshed cleanly
+    assert "New Short Title" in (t1 / "lab.yaml").read_text(encoding="utf-8")
+    assert "# Lab 01: New Short Title" in (t1 / "BRIEF.md").read_text(encoding="utf-8")
+    # User custom lab untouched
+    assert "My Custom Lab" in (t20 / "lab.yaml").read_text(encoding="utf-8")
+
+    # Simulate user editing BRIEF.md on seed lab, then bundled updating again
+    (t1 / "BRIEF.md").write_text("# User Edited Brief\n", encoding="utf-8")
+    (b1 / "BRIEF.md").write_text("# Lab 01: Even Newer\n", encoding="utf-8")
+    (b1 / "lab.yaml").write_text('id: "lab-01"\ntitle: "Even Newer Title"\n', encoding="utf-8")
+
+    ensure_seed_labs_copied(bundled, target)
+
+    # Unmodified lab.yaml updated, user-edited BRIEF.md preserved
+    assert "Even Newer Title" in (t1 / "lab.yaml").read_text(encoding="utf-8")
+    assert "# User Edited Brief" in (t1 / "BRIEF.md").read_text(encoding="utf-8")
+
 
 
 

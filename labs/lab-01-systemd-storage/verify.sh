@@ -2,15 +2,15 @@
 # Non-destructive, idempotent verification script emitting strict JSON to stdout
 
 chk1_pass=false
-chk1_desc="Filesystem /mnt/appdata is mounted and persistent in /etc/fstab"
+chk1_desc="Is /mnt/appdata mounted from /var/lib/lplab/appdata.img and listed in /etc/fstab?"
 chk1_det=""
 
 chk2_pass=false
-chk2_desc="app-worker.service is unmasked, enabled, and active"
+chk2_desc="Is app-worker.service unmasked, enabled, and active?"
 chk2_det=""
 
 chk3_pass=false
-chk3_desc="Log file debug.log is under 5MB and /etc/logrotate.d/app-worker exists"
+chk3_desc="Is /var/log/app-worker/debug.log <= 5MB and does /etc/logrotate.d/app-worker exist?"
 chk3_det=""
 
 # Check 1: Mount & fstab
@@ -26,9 +26,9 @@ fi
 
 if [ "$is_mounted" = true ] && [ "$fstab_valid" = true ]; then
     chk1_pass=true
-    chk1_det="/mnt/appdata is mounted via /var/lib/lplab/appdata.img and /etc/fstab entry is valid."
+    chk1_det="/mnt/appdata mounted and /etc/fstab entry valid."
 else
-    chk1_det="Mount status: mounted=${is_mounted}, valid_fstab=${fstab_valid}"
+    chk1_det="mounted=${is_mounted}, valid_fstab=${fstab_valid}"
 fi
 
 # Check 2: Service status
@@ -49,9 +49,9 @@ fi
 
 if [ "$svc_masked" = false ] && [ "$svc_enabled" = true ] && [ "$svc_active" = true ]; then
     chk2_pass=true
-    chk2_det="app-worker.service is unmasked, enabled, and actively running."
+    chk2_det="app-worker.service is unmasked, enabled, and active."
 else
-    chk2_det="Service status: masked=${svc_masked}, enabled=${svc_enabled}, active=${svc_active}"
+    chk2_det="masked=${svc_masked}, enabled=${svc_enabled}, active=${svc_active}"
 fi
 
 # Check 3: Log file size & logrotate config
@@ -59,7 +59,6 @@ log_ok=false
 log_path="/var/log/app-worker/debug.log"
 if [ -f "$log_path" ]; then
     size_bytes=$(stat -c%s "$log_path" 2>/dev/null || echo 99999999)
-    # 5MB = 5242880 bytes
     if [ "$size_bytes" -le 5242880 ]; then
         log_ok=true
     fi
@@ -74,12 +73,11 @@ fi
 
 if [ "$log_ok" = true ] && [ "$rotate_cfg_ok" = true ]; then
     chk3_pass=true
-    chk3_det="debug.log size is within limits and /etc/logrotate.d/app-worker is present."
+    chk3_det="debug.log <= 5MB and /etc/logrotate.d/app-worker exists."
 else
-    chk3_det="Log status: under_5MB=${log_ok}, logrotate_cfg_present=${rotate_cfg_ok}"
+    chk3_det="under_5MB=${log_ok}, logrotate_cfg=${rotate_cfg_ok}"
 fi
 
-# Calculate score
 score_passed=0
 [ "$chk1_pass" = true ] && score_passed=$((score_passed + 1))
 [ "$chk2_pass" = true ] && score_passed=$((score_passed + 1))
@@ -89,7 +87,6 @@ score_total=3
 overall_passed=false
 [ "$score_passed" -eq "$score_total" ] && overall_passed=true
 
-# Output strict JSON
 cat <<EOF
 {
   "lab_id": "lab-01",

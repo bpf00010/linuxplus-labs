@@ -66,7 +66,10 @@ nft add rule inet lplab02 input tcp dport 18080 drop
 
 
 def test_seed_labs_pass_linter():
-    """Verify that all fourteen shipped seed labs pass the safety linter with zero errors."""
+    """Verify all 19 shipped seed labs pass the safety linter, bash -n (38 scripts), and 1-to-1 PBQ rules."""
+    import re
+    import yaml
+
     labs_root = Path(__file__).resolve().parent.parent / "labs"
 
     seed_labs = [
@@ -84,14 +87,39 @@ def test_seed_labs_pass_linter():
         "lab-12-backup-rsync-integrity",
         "lab-13-ansible-local-iac",
         "lab-14-dns-socket-forensics",
+        "lab-15-permissions-special-bits",
+        "lab-16-users-groups-limits",
+        "lab-17-processes-nice-cron",
+        "lab-18-text-cli-bash-scripting",
+        "lab-19-packages-dpkg-apt",
     ]
 
     for lab_slug in seed_labs:
         lab_dir = labs_root / lab_slug
         assert lab_dir.is_dir(), f"Missing lab dir: {lab_dir}"
 
+        manifest_data = yaml.safe_load((lab_dir / "lab.yaml").read_text(encoding="utf-8"))
+        manifest = LabManifest.model_validate(manifest_data)
+        assert len(manifest.title.split()) <= 6, f"{lab_slug} title too long: {manifest.title}"
+
+        brief_text = (lab_dir / "BRIEF.md").read_text(encoding="utf-8")
+        assert "## Goal" in brief_text and "## Tasks" in brief_text, f"{lab_slug} BRIEF.md missing Goal/Tasks"
+        tasks = re.findall(r"^\d+\.\s+.+", brief_text, flags=re.MULTILINE)
+        assert len(tasks) == len(manifest.objectives), (
+            f"{lab_slug}: {len(tasks)} tasks != {len(manifest.objectives)} objectives"
+        )
+
         setup_sh = (lab_dir / "setup.sh").read_text(encoding="utf-8")
         verify_sh = (lab_dir / "verify.sh").read_text(encoding="utf-8")
+
+        check_ids = re.findall(r'"id":\s*"chk-[^"]+"', verify_sh)
+        assert len(check_ids) == len(tasks), (
+            f"{lab_slug}: {len(check_ids)} verify checks != {len(tasks)} tasks"
+        )
+        check_descs = re.findall(r'^chk\d+_desc="([^"]+)"', verify_sh, flags=re.MULTILINE)
+        assert len(check_descs) == len(check_ids), f"{lab_slug}: missing chkN_desc definitions"
+        for desc in check_descs:
+            assert desc.endswith("?"), f"{lab_slug}: check description must be a question: {desc}"
 
         setup_errors = SafetyLinter.lint_script(setup_sh, f"{lab_slug}/setup.sh")
         assert not setup_errors, f"{lab_slug} setup.sh errors: {setup_errors}"
@@ -102,7 +130,7 @@ def test_seed_labs_pass_linter():
         json_contract_errors = SafetyLinter.lint_verify_script(verify_sh)
         assert not json_contract_errors, f"{lab_slug} verify.sh JSON errors: {json_contract_errors}"
 
-        # Verify bash -n syntax checks pass for both scripts
+        # Verify bash -n syntax checks pass for all 38 scripts
         syntax_err_setup = SafetyLinter.check_bash_syntax(setup_sh)
         assert syntax_err_setup is None, f"{lab_slug}/setup.sh syntax error: {syntax_err_setup}"
 

@@ -2,19 +2,19 @@
 # Non-destructive, idempotent verification script emitting strict JSON to stdout
 
 chk1_pass=false
-chk1_desc="sshd -t passes and sshd -T reports permitrootlogin no, passwordauthentication no, and allowgroups sshusers"
+chk1_desc="Does sshd -t pass with PermitRootLogin no, PasswordAuthentication no, and AllowGroups sshusers?"
 chk1_det=""
 
 chk2_pass=false
-chk2_desc="SSH daemon (ssh.service or ssh.socket) is active under systemd"
+chk2_desc="Is ssh.service or ssh.socket active?"
 chk2_det=""
 
 chk3_pass=false
-chk3_desc="opsadmin is in group sshusers, and .ssh directory (700) and authorized_keys (600) have secure permissions"
+chk3_desc="Is opsadmin in sshusers with .ssh (0700) and authorized_keys (0600)?"
 chk3_det=""
 
 chk4_pass=false
-chk4_desc="chage -l opsadmin reports maximum password age between 1 and 90 days"
+chk4_desc="Is opsadmin maximum password age between 1 and 90 days?"
 chk4_det=""
 
 # Check 1: OpenSSH configuration and effective directives
@@ -40,9 +40,9 @@ fi
 
 if [ "$syntax_ok" = true ] && [ "$root_no" = true ] && [ "$pass_no" = true ] && [ "$allow_ok" = true ]; then
     chk1_pass=true
-    chk1_det="sshd -t syntax is valid and effective config enforces root=no, password=no, allowgroups=sshusers."
+    chk1_det="sshd config valid with root=no, password=no, allowgroups=sshusers."
 else
-    chk1_det="syntax=${syntax_ok}, permitrootlogin_no=${root_no}, passwordauth_no=${pass_no}, allowgroups_sshusers=${allow_ok}"
+    chk1_det="syntax=${syntax_ok}, root_no=${root_no}, password_no=${pass_no}, allowgroups=${allow_ok}"
 fi
 
 # Check 2: SSH systemd unit active
@@ -53,9 +53,9 @@ fi
 
 if [ "$ssh_active" = true ]; then
     chk2_pass=true
-    chk2_det="SSH daemon or socket is actively running under systemd."
+    chk2_det="SSH unit is active."
 else
-    chk2_det="Neither ssh.service nor ssh.socket is currently active."
+    chk2_det="Neither ssh.service nor ssh.socket is active."
 fi
 
 # Check 3: opsadmin group and file permissions
@@ -85,7 +85,7 @@ fi
 if [ "$in_group" = true ] && [ "$dir_owner" = "opsadmin:opsadmin" ] && [ "$dir_mode" = "700" ] && \
    [ "$key_owner" = "opsadmin:opsadmin" ] && [ "$key_mode" = "600" ]; then
     chk3_pass=true
-    chk3_det="opsadmin is member of sshusers, .ssh is 0700 opsadmin, authorized_keys is 0600 opsadmin."
+    chk3_det="opsadmin in sshusers; .ssh 0700 and authorized_keys 0600."
 else
     chk3_det="in_group=${in_group}, dir=${dir_owner}(${dir_mode}), keys=${key_owner}(${key_mode})"
 fi
@@ -95,12 +95,11 @@ max_days=$(chage -l opsadmin 2>/dev/null | grep -i "Maximum number of days" | aw
 
 if [ -n "$max_days" ] && [ "$max_days" -ge 1 ] 2>/dev/null && [ "$max_days" -le 90 ] 2>/dev/null; then
     chk4_pass=true
-    chk4_det="Maximum password age for opsadmin is compliant: ${max_days} days (policy <= 90)."
+    chk4_det="Max password age for opsadmin is ${max_days} days."
 else
-    chk4_det="Maximum password age for opsadmin is ${max_days} (expected between 1 and 90)."
+    chk4_det="Max password age is ${max_days} (expected 1..90)."
 fi
 
-# Calculate score
 score_passed=0
 [ "$chk1_pass" = true ] && score_passed=$((score_passed + 1))
 [ "$chk2_pass" = true ] && score_passed=$((score_passed + 1))

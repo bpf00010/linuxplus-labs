@@ -2,19 +2,19 @@
 # Non-destructive, idempotent verification script emitting strict JSON to stdout
 
 chk1_pass=false
-chk1_desc="veth-host and veth-app (inside app-ns) interfaces are both UP"
+chk1_desc="Are veth-host and veth-app (in app-ns) both UP?"
 chk1_det=""
 
 chk2_pass=false
-chk2_desc="Default route via 10.250.10.1 exists inside namespace app-ns"
+chk2_desc="Does a default route via 10.250.10.1 exist in app-ns?"
 chk2_det=""
 
 chk3_pass=false
-chk3_desc="netns-api.service is active and scoped table app_fw permits TCP 18090"
+chk3_desc="Is netns-api.service active and does table inet app_fw allow TCP 18090?"
 chk3_det=""
 
 chk4_pass=false
-chk4_desc="Endpoint http://10.250.10.2:18090/health returns HTTP 200 healthy from root namespace"
+chk4_desc="Does http://10.250.10.2:18090/health return HTTP 200 healthy from the root namespace?"
 chk4_det=""
 
 # Check 1: Interface state
@@ -31,9 +31,9 @@ fi
 
 if [ "$host_up" = true ] && [ "$app_up" = true ]; then
     chk1_pass=true
-    chk1_det="Both veth-host and veth-app are in UP administrative state."
+    chk1_det="veth-host and veth-app are UP."
 else
-    chk1_det="Interface state: veth-host=${host_up}, veth-app=${app_up}"
+    chk1_det="veth-host=${host_up}, veth-app=${app_up}"
 fi
 
 # Check 2: Default route in app-ns
@@ -44,9 +44,9 @@ fi
 
 if [ "$route_ok" = true ]; then
     chk2_pass=true
-    chk2_det="Default route via 10.250.10.1 is present inside app-ns."
+    chk2_det="Default route via 10.250.10.1 present in app-ns."
 else
-    chk2_det="Default route via 10.250.10.1 is missing inside app-ns."
+    chk2_det="Default route via 10.250.10.1 missing in app-ns."
 fi
 
 # Check 3: Service active & scoped firewall drop rule removed
@@ -67,9 +67,9 @@ fi
 
 if [ "$svc_active" = true ] && [ "$fw_table_exists" = true ] && [ "$drop_absent" = true ]; then
     chk3_pass=true
-    chk3_det="netns-api.service is active, inet app_fw table exists, and port 18090 drop rule is absent."
+    chk3_det="netns-api.service active, table inet app_fw intact, port 18090 allowed."
 else
-    chk3_det="Service active=${svc_active}, table_exists=${fw_table_exists}, drop_rule_absent=${drop_absent}"
+    chk3_det="active=${svc_active}, table_exists=${fw_table_exists}, drop_removed=${drop_absent}"
 fi
 
 # Check 4: HTTP health query from root namespace
@@ -84,12 +84,11 @@ fi
 
 if [ "$curl_ok" = true ]; then
     chk4_pass=true
-    chk4_det="Root namespace reached http://10.250.10.2:18090/health successfully: ${http_resp}"
+    chk4_det="Health endpoint returned HTTP 200 healthy."
 else
-    chk4_det="Failed to receive HTTP 200 healthy from http://10.250.10.2:18090/health"
+    chk4_det="Request to http://10.250.10.2:18090/health failed."
 fi
 
-# Calculate score
 score_passed=0
 [ "$chk1_pass" = true ] && score_passed=$((score_passed + 1))
 [ "$chk2_pass" = true ] && score_passed=$((score_passed + 1))

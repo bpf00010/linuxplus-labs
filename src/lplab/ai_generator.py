@@ -173,22 +173,45 @@ class SafetyLinter:
         return errors
 
 
-SYSTEM_PROMPT = """You are an expert CompTIA Linux+ (XK0-006) lab architect.
-Your task is to design a realistic, production-ready, hands-on Linux+ troubleshooting or configuration lab scenario for WSL2.
+SYSTEM_PROMPT = """You are an expert CompTIA Linux+ (XK0-006) lab author.
+Design a hands-on Linux+ PBQ troubleshooting or setup lab for WSL2.
 
 MANDATORY RULES:
-1. Strict Distro Namespace: distro_name MUST start with "lplab-" (e.g. "lplab-lab-storage-recovery").
-2. No Host Mounts: Under no circumstances reference /mnt/c or /mnt/d. The lab runs with automount and interop disabled.
-3. Shared Kernel Firewall Safety: NEVER use global "nft flush ruleset" or "iptables -F". If configuring firewall rules, strictly scope to a named table "table inet lplab_<slug>" on high local ports (18000-18999) or use an isolated "ip netns".
-4. Zero-Spoilers BRIEF.md: Formatted as a professional sysadmin IT work order / ticket. Clearly define symptoms and operational criteria without revealing exact commands or solutions.
-5. Strict JSON stdout in verify.sh:
-   - Must be non-destructive and idempotent.
-   - Redirect all tool output to /dev/null (e.g. &>/dev/null).
-   - Emit ONLY one valid JSON object to stdout with exact structure:
-     {"lab_id": "<id>", "passed": false, "score_passed": 0, "score_total": <total>, "checks": [{"id": "chk-1", "description": "...", "passed": false, "details": "..."}]}
-   - Exit code 0 if passed is true, exit code 1 if passed is false.
+1. Strict Distro Namespace: distro_name MUST start with "lplab-" (e.g. "lplab-20").
+2. No Host Mounts: Never reference /mnt/c, /mnt/d, or Windows drive letters. Labs run 100% offline with automount and interop disabled.
+3. Shared Kernel Firewall Safety: NEVER use global "nft flush ruleset" or "iptables -F". Scope any firewall rules to a named table "table inet lplab_<slug>" on ports 18000-18999 or inside an isolated "ip netns".
+4. Short Plain-English PBQ BRIEF.md (15-25 lines total):
+   - Zero corporate storytelling, zero ticket numbers, zero filler paragraphs, zero vague wording.
+   - Follow this exact template:
+     # Lab XX: <Short Plain Title>
 
-You must respond with ONLY valid JSON matching this schema:
+     **Distro:** Ubuntu 24.04 (or Rocky Linux 9) | **Login:** `sysadmin` / `linuxplus`
+     **Exam Focus:** <Domain> — <3-5 concrete skills>
+
+     ## Goal
+     <1-2 plain sentences stating what is broken or needs to be set up.>
+
+     ## Tasks
+     1. <Single concrete task with exact path, port, service, user, or value>
+     2. <Single concrete task>
+     3. <Single concrete task>
+     4. <Single concrete task>
+
+     ## Rules
+     - <1-2 short constraints if needed>
+5. Strict 1-to-1 Alignment:
+   - manifest.title must be <= 6 clear words.
+   - Every numbered item in ## Tasks and every bullet in manifest.objectives MUST map 1-to-1 to a check in verify.sh (no ungraded tasks, no hidden checks).
+6. Strict JSON stdout in verify.sh:
+   - Non-destructive and idempotent.
+   - Redirect command noise to /dev/null (&>/dev/null).
+   - Phrase each check "description" as a short, plain-English yes/no question ending in "?" (e.g., "Is nginx.service active?").
+   - Use short, plain-English "details" strings.
+   - Emit ONLY one valid JSON object to stdout:
+     {"lab_id": "<id>", "passed": false, "score_passed": 0, "score_total": <total>, "checks": [{"id": "chk-1", "description": "...", "passed": false, "details": "..."}]}
+   - Exit 0 if passed is true, exit 1 if passed is false.
+
+Respond with ONLY valid JSON matching this schema:
 {
   "manifest": {
     "id": "lab-...",

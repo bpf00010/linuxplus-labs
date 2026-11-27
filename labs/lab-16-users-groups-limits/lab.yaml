@@ -1,0 +1,16 @@
+id: "lab-16"
+slug: "lab-16-users-groups-limits"
+title: "Users, Groups, Skel, and Limits"
+distro_name: "lplab-16"
+base_image: "ubuntu-24.04"
+student_user: "sysadmin"
+difficulty: "beginner"
+estimated_minutes: 20
+xk0_006_domains:
+  - "services_and_users"
+  - "security"
+objectives:
+  - "Add /etc/skel/WELCOME.txt and directory /etc/skel/bin"
+  - "Create group ops and user appuser (/bin/bash, secondary group ops) with skel files in /home/appuser"
+  - "Lock formeremp, set shell to /usr/sbin/nologin, and expire the account"
+  - "Create /etc/security/limits.d/99-appuser.conf with soft nofile 4096 and hard nofile 8192"

@@ -1,6 +1,6 @@
 id: "lab-03"
 slug: "lab-03-security-containers"
-title: "Enforce Least Privilege Sudoers and Directory Collaboration Security"
+title: "Shared Directory ACLs and Sudoers"
 distro_name: "lplab-lab-03-security-containers"
 base_image: "rockylinux-9"
 student_user: "sysadmin"
@@ -11,6 +11,7 @@ xk0_006_domains:
   - "services_and_users"
   - "troubleshooting"
 objectives:
-  - "Set up group collaboration with setgid and POSIX ACLs on /srv/shared-app"
-  - "Restrict overly permissive sudoers policy according to principle of least privilege"
-  - "Ensure deployment service account can only restart app-proxy service without password"
+  - "Set group webops and mode 2770 or 2775 on /srv/shared-app"
+  - "Add default POSIX ACL granting group webops rwx on /srv/shared-app"
+  - "Ensure /etc/sudoers.d/99-deploy passes visudo -cf"
+  - "Restrict user deploy to restart app-proxy without password and no ALL rights"

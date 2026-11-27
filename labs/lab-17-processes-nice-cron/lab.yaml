@@ -1,0 +1,16 @@
+id: "lab-17"
+slug: "lab-17-processes-nice-cron"
+title: "Processes, Nice Priority, and Cron"
+distro_name: "lplab-17"
+base_image: "ubuntu-24.04"
+student_user: "sysadmin"
+difficulty: "intermediate"
+estimated_minutes: 25
+xk0_006_domains:
+  - "system_management"
+  - "troubleshooting"
+objectives:
+  - "Stop and disable cpu-hog.service so no cpu-hog.sh process runs"
+  - "Set Nice=15 on batch-job.service, reload systemd, and restart it"
+  - "Create /etc/cron.allow containing only root and sysadmin"
+  - "Schedule /usr/local/bin/heartbeat.sh every 5 minutes in sysadmin crontab and start cron.service"

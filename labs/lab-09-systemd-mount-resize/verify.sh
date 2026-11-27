@@ -2,19 +2,19 @@
 # Non-destructive, idempotent verification script emitting strict JSON to stdout
 
 chk1_pass=false
-chk1_desc="/mnt/archive is mounted as ext4 with nodev, nosuid, and noexec options"
+chk1_desc="Is /mnt/archive mounted as ext4 with nodev, nosuid, and noexec?"
 chk1_det=""
 
 chk2_pass=false
-chk2_desc="Mounted filesystem size at /mnt/archive is at least 85MB"
+chk2_desc="Is the /mnt/archive filesystem size at least 85MB?"
 chk2_det=""
 
 chk3_pass=false
-chk3_desc="mnt-archive.mount is enabled and active under systemd"
+chk3_desc="Is mnt-archive.mount enabled and active?"
 chk3_det=""
 
 chk4_pass=false
-chk4_desc="archive-sync.service is enabled and active under systemd"
+chk4_desc="Is archive-sync.service enabled and active?"
 chk4_det=""
 
 # Check 1: Mount presence and options
@@ -37,9 +37,9 @@ fi
 
 if [ -n "$mount_opts" ] && [ "$fstype" = "ext4" ] && [ "$has_nodev" = true ] && [ "$has_nosuid" = true ] && [ "$has_noexec" = true ]; then
     chk1_pass=true
-    chk1_det="/mnt/archive is mounted as ext4 with required options: ${mount_opts}."
+    chk1_det="/mnt/archive mounted as ext4 with nodev,nosuid,noexec."
 else
-    chk1_det="Mount status: fstype=${fstype}, options=${mount_opts} (requires ext4, nodev, nosuid, noexec)"
+    chk1_det="fstype=${fstype}, options=${mount_opts}"
 fi
 
 # Check 2: Filesystem size >= 85MB
@@ -47,9 +47,9 @@ size_mb=$(df -BM --output=size /mnt/archive 2>/dev/null | tail -n 1 | tr -d ' M'
 
 if [ -n "$size_mb" ] && [ "$size_mb" -ge 85 ] 2>/dev/null; then
     chk2_pass=true
-    chk2_det="Mounted filesystem size is ${size_mb}MB (meets >= 85MB requirement)."
+    chk2_det="/mnt/archive size is ${size_mb}MB."
 else
-    chk2_det="Mounted filesystem size is ${size_mb}MB (expected >= 85MB)"
+    chk2_det="size=${size_mb}MB (expected >= 85MB)"
 fi
 
 # Check 3: mnt-archive.mount status
@@ -68,7 +68,7 @@ if [ "$mount_enabled" = true ] && [ "$mount_active" = true ]; then
     chk3_pass=true
     chk3_det="mnt-archive.mount is enabled and active."
 else
-    chk3_det="mnt-archive.mount status: enabled=${mount_enabled}, active=${mount_active}"
+    chk3_det="enabled=${mount_enabled}, active=${mount_active}"
 fi
 
 # Check 4: archive-sync.service status
@@ -87,10 +87,9 @@ if [ "$svc_enabled" = true ] && [ "$svc_active" = true ]; then
     chk4_pass=true
     chk4_det="archive-sync.service is enabled and active."
 else
-    chk4_det="archive-sync.service status: enabled=${svc_enabled}, active=${svc_active}"
+    chk4_det="enabled=${svc_enabled}, active=${svc_active}"
 fi
 
-# Calculate score
 score_passed=0
 [ "$chk1_pass" = true ] && score_passed=$((score_passed + 1))
 [ "$chk2_pass" = true ] && score_passed=$((score_passed + 1))

@@ -1,6 +1,6 @@
 id: "lab-02"
 slug: "lab-02-networking-firewall"
-title: "Resolve API Port Block and Web Server Configuration"
+title: "Fix Nginx, Hosts, and Firewall"
 distro_name: "lplab-lab-02-networking-firewall"
 base_image: "ubuntu-24.04"
 student_user: "sysadmin"
@@ -11,6 +11,7 @@ xk0_006_domains:
   - "security"
   - "troubleshooting"
 objectives:
-  - "Diagnose and fix syntax error in Nginx site configuration"
-  - "Update /etc/hosts with correct loopback mapping for api.lab.internal"
-  - "Modify scoped nftables table to permit traffic on TCP port 18080 without touching shared tables"
+  - "Fix /etc/nginx/sites-available/internal-api and start nginx"
+  - "Map api.lab.internal to 127.0.0.1 in /etc/hosts"
+  - "Allow TCP port 18080 in nftables table inet lplab02"
+  - "Verify http://api.lab.internal:18080/health returns HTTP 200 healthy"
